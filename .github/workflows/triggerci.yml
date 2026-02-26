@@ -1,0 +1,172 @@
+name: triggerci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: read
+  packages: write
+  security-events: write
+
+env:
+  APP_NAME: demo-app
+  REGISTRY: docker.io
+  IMAGE_REPO: ${{ secrets.nahumtestaccount }}/demo-app
+  NODE_VERSION: "20"
+
+jobs:
+  validate-pr-approval:
+    if: github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR review is approved
+        run: |
+          echo "Review state: ${{ github.event.review.state }}"
+          if [ "${{ github.event.review.state }}" != "approved" ]; then
+            echo "This workflow only proceeds on PR approval."
+            exit 1
+          fi
+
+  ci-security-build:
+    name: CI + Security + Build
+    runs-on: ubuntu-latest
+    needs: [validate-pr-approval]
+    if: always() && (github.event_name == 'push' || (github.event_name == 'pull_request_review' && github.event.review.state == 'approved'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set IMAGE_TAG
+        id: vars
+        run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-12)
+          echo "image_tag=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "full_image=${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      # 1) Unit tests + coverage >= 80%
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        working-directory: app
+        run: npm run test:coverage
+
+      # 2) Static analysis (SAST) + lint
+      - name: Run ESLint
+        working-directory: app
+        run: npm run lint
+
+      - name: Run Semgrep (SAST)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/nodejs
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN || '' }}
+
+      # 3) Composition analysis (SCA)
+      - name: Run npm audit (high+)
+        working-directory: app
+        run: npm audit --audit-level=high || true
+
+      - name: Trivy FS scan (source/deps)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          exit-code: '0'
+
+      # 4) Build Docker image
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image (local for DAST)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ steps.vars.outputs.full_image }}
+
+      # 5) Dynamic analysis (DAST) con ZAP
+      - name: Run container locally
+        run: |
+          docker run -d --name demo-app -p 3000:3000 ${{ steps.vars.outputs.full_image }}
+          sleep 10
+          curl -f http://localhost:3000/health
+
+      - name: OWASP ZAP Baseline Scan (DAST)
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://host.docker.internal:3000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+        continue-on-error: true
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.vars.outputs.full_image }}
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          exit-code: '0'
+
+      # 6) Push imagen (solo en main)
+      - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.full_image }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:latest
+
+      # 7) GitOps: actualizar values.yaml y commitear
+      - name: Update GitOps values.yaml with new image tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          sed -i "s|tag: .*|tag: \"${{ steps.vars.outputs.image_tag }}\"|g" gitops/values.yaml
+          sed -i "s|repository: .*|repository: \"${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}\"|g" gitops/values.yaml
+          echo "Updated gitops/values.yaml:"
+          cat gitops/values.yaml
+
+      - name: Commit & push GitOps manifest update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gitops/values.yaml
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "ci: update image tag to ${{ steps.vars.outputs.image_tag }}"
+          git push
