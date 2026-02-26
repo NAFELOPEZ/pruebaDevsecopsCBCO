@@ -257,3 +257,4 @@ En GitHub:
 ### 9.4 Coverage < 80%
 - causa: rutas/branches no cubiertos
 - solución: ajustar tests o excluir entrypoints de cobertura (con `istanbul ignore next`).
+- Test cbco
