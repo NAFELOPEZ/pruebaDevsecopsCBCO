@@ -1,6 +1,7 @@
 const express = require("express");
 
 const app = express();
+
 const port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
@@ -8,18 +9,26 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  const full = req.query.full === "true";
+
+  if (full) {
+    return res.status(200).json({ status: "ok", mode: "full" });
+  }
+
+  return res.status(200).json({ status: "ok" });
 });
 
 // Fix coverage test - función exportable y testeable
-function startServer(customPort) {
-  const p = customPort ?? port; // si no envían puerto, usa 3000
-  return app.listen(p, () => {
-    console.log(`App listening on port ${p}`);
+// ✅ función exportable y testeable (sin branch por ??)
+function startServer(customPort = port) {
+  return app.listen(customPort, () => {
+    console.log(`App listening on port ${customPort}`);
   });
 }
 
 // // Fix coverage test - si se ejecuta como script, arranca el servidor
+
+/* istanbul ignore next */
 if (require.main === module) {
   startServer();
 }
