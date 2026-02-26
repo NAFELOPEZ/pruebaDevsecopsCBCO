@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../src/index");
+const { app, startServer } = require("../src/index");
 
 describe("Demo App", () => {
   it("GET /health should return ok", async () => {
@@ -13,4 +13,11 @@ describe("Demo App", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBeDefined();
   });
+
+it("startServer should start on a free port and be closable", (done) => {
+  const server = startServer(0); // 0 => puerto aleatorio libre
+  server.on("listening", () => {
+    server.close(done);
+  });
+});
 });
