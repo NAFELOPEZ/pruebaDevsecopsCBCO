@@ -16,7 +16,7 @@ permissions:
 env:
   APP_NAME: demo-app
   REGISTRY: docker.io
-  IMAGE_REPO: ${{ secrets.nahumtestaccount }}/demo-app
+  IMAGE_REPO: nahumtestaccount/demo-app
   NODE_VERSION: "20"
 
 jobs:
