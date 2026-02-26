@@ -1,2 +1,2 @@
 # pruebaDevsecopsCBCO
-Prueva tecnica devsecops credibanco
+Prueba técnica devsecops credibanco
