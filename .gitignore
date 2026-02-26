@@ -1,3 +1,7 @@
+app/node_modules/
+node_modules/
 app/coverage/
 coverage/
-node_modules/
+.cache/
+report_*.*
+zap_report*.*
