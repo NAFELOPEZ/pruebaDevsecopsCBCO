@@ -1,6 +1,6 @@
 image:
   repository: "docker.io/nahumtestaccount/demo-app"
-  tag: "29cc72d9be70"
+  tag: "4bbfee14eec0"
   pullPolicy: IfNotPresent
 
 replicaCount: 1
