@@ -54,7 +54,7 @@ PR obligatorio + CodeOwners]
 
 ### 2.1 En local (para ejecutar app/tests/Docker)
 - Git
-- Node.js (recomendado v20)
+- Node.js (recomendado v20 o superior)
 - Docker Desktop
 
 ### 2.2 En GitHub
@@ -109,12 +109,13 @@ Detener: `Ctrl + C`.
 ### 4.3 Construir y correr con Docker
 Desde la raíz del repo:
 ```bash
-cd ..
+cd D:\DevelopFiles\P_tec_CBCO\pruebaDevsecopsCBCO
 docker build -t demo-app:test .
 docker run -p 3000:3000 demo-app:test
 ```
 
 Probar en navegador:
+- `http://localhost:3000/`
 - `http://localhost:3000/health`
 - `http://localhost:3000/health?full=true`
 
@@ -126,13 +127,19 @@ Detener: `Ctrl + C`.
 
 ### 5.1 Crear repositorio
 En DockerHub:
-- Crear repo: `demo-app` (recomendado Public para simplificar pruebas)
+- Crear repo: `demo-app` (Public para simplificar pruebas)
 
 ### 5.2 Crear Access Token
 En DockerHub:
 - Account Settings → Security → Access Tokens → New Token
-- Nombre sugerido: `github-actions`
+- Nombre: `github-actions`
 - Copiar el token
+- To use the access token from your Docker CLI client:
+    1. Run
+        `docker login -u nahumtestaccount`
+
+    2. At the password prompt, enter the personal access token.
+        `dckr_pat_y5mdMVK56K4cBkUpRtUs5Uoy5qY`
 
 ---
 
@@ -173,11 +180,11 @@ Activar:
 - Require approvals (1)
 - Require review from Code Owners
 - Require status checks to pass before merging (seleccionar `triggerci`)
-- (Recomendado) Require conversation resolution before merging
+- Require conversation resolution before merging
 
 ---
 
-## 7) Flujo para el evaluador (cómo ejecutar el escenario completo)
+## 7) Para el evaluador (cómo ejecutar el escenario completo)
 
 ### Paso 1 — Crear una rama y abrir PR
 En local:
