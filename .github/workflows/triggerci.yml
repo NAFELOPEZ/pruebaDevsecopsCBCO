@@ -86,14 +86,14 @@ jobs:
         working-directory: app
         run: npm audit --audit-level=high || true
 
-      - name: Trivy FS scan (source/deps)
-        uses: aquasecurity/trivy-action@0.28.0
+      # 4) Setup Trivy
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          ignore-unfixed: true
-          exit-code: '0'
+          version: v0.56.1
+
+      - name: Trivy FS scan (source/deps)
+        run: trivy fs --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 --skip-dirs app/node_modules,.git .
 
       # 4) Build Docker image
       - name: Set up QEMU
