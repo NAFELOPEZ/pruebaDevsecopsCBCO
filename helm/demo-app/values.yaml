@@ -1,16 +1,36 @@
+# ==============================================================
+# values.yaml — Valores por defecto del Helm chart
+#
+# IMPORTANTE: Este archivo contiene los defaults.
+# Los valores de producción (imagen, tag) se sobreescriben
+# desde gitops/values.yaml por ArgoCD.
+#
+# Jerarquía de valores:
+#   helm/demo-app/values.yaml  ← defaults (este archivo)
+#   gitops/values.yaml         ← overrides de producción (ArgoCD)
+# ==============================================================
+
 replicaCount: 1
 
+# ── Imagen ────────────────────────────────────────────────────
 image:
-  repository: "docker.io/CHANGE_ME/demo-app"
-  tag: "latest"
-  pullPolicy: IfNotPresent
+  repository: "docker.io/CHANGE_ME/demo-app"  # Sobreescrito por gitops/values.yaml
+  tag: "latest"                                # Sobreescrito por gitops/values.yaml
+  # Always: garantiza que siempre se pullea la imagen correcta,
+  # especialmente cuando el tag es mutable (ej: latest).
+  # Para tags inmutables (SHA), IfNotPresent es aceptable.
+  pullPolicy: Always
 
+# ── Red ───────────────────────────────────────────────────────
 service:
   type: ClusterIP
   port: 3000
 
 containerPort: 3000
 
+# ── Recursos ──────────────────────────────────────────────────
+# Siempre definir requests y limits.
+# Sin limits, un pod puede consumir toda la memoria del nodo.
 resources:
   requests:
     cpu: 100m
@@ -19,12 +39,102 @@ resources:
     cpu: 300m
     memory: 256Mi
 
+# ── Health Probes ─────────────────────────────────────────────
 livenessProbe:
   path: /health
   initialDelaySeconds: 10
   periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
 
 readinessProbe:
   path: /health
   initialDelaySeconds: 5
   periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# startupProbe: protege contra el liveness probe matando el pod
+# durante un arranque lento (Node.js JIT warmup, etc.)
+startupProbe:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 12  # 12 * 5s = 60s máximo para arrancar
+
+# ── ServiceAccount ────────────────────────────────────────────
+serviceAccount:
+  # create: true → el chart crea un SA dedicado
+  # false → usa el SA "default" del namespace (no recomendado)
+  create: true
+  # name: "" → usa el fullname del release como nombre del SA
+  name: ""
+  # automountServiceAccountToken: false → la app no necesita
+  # acceder a la API de Kubernetes. Desactivar reduce la
+  # superficie de ataque si hay RCE en el pod.
+  automountServiceAccountToken: false
+  annotations: {}
+
+# ── Seguridad del Pod (Pod Security Context) ──────────────────
+# Aplica a TODOS los contenedores del pod
+podSecurityContext:
+  # runAsNonRoot: Kubernetes rechaza el pod si el contenedor
+  # intenta correr como root (UID 0), incluso si el Dockerfile
+  # no tiene USER declarado.
+  runAsNonRoot: true
+  # runAsUser/runAsGroup: deben coincidir con el UID/GID
+  # declarados en el Dockerfile (adduser -u 1001)
+  runAsUser: 1001
+  runAsGroup: 1001
+  # fsGroup: el proceso puede leer archivos del grupo 1001.
+  # Necesario si la app lee archivos montados como volúmenes.
+  fsGroup: 1001
+
+# ── Seguridad del Contenedor (Container Security Context) ─────
+# Aplica al contenedor específico
+containerSecurityContext:
+  # allowPrivilegeEscalation: false → el proceso no puede
+  # obtener más privilegios que su proceso padre.
+  # Previene sudo, setuid, setgid.
+  allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem: el filesystem del contenedor es
+  # de sólo lectura. Si hay RCE, el attacker no puede
+  # modificar binarios ni instalar herramientas.
+  # La app necesita /tmp para escrituras temporales (ver volumes).
+  readOnlyRootFilesystem: true
+  # capabilities: eliminar TODAS las capabilities de Linux.
+  # Node.js en puerto 3000 no necesita ninguna.
+  # (puertos < 1024 requieren NET_BIND_SERVICE — no aplica aquí)
+  capabilities:
+    drop:
+      - ALL
+
+# ── NetworkPolicy ─────────────────────────────────────────────
+networkPolicy:
+  # enabled: true → crear NetworkPolicy para este pod
+  # Requiere un CNI que soporte NetworkPolicy (Calico, Cilium,
+  # Weave, etc.). Si tu cluster usa Flannel sin plugin de
+  # network policy, deja en false.
+  enabled: true
+  # ingressFromNamespace: namespace desde donde se permite tráfico
+  # Ajustar al namespace de tu ingress controller
+  ingressFromNamespace: "ingress-nginx"
+
+# ── PodDisruptionBudget ───────────────────────────────────────
+podDisruptionBudget:
+  # enabled: true → garantiza disponibilidad mínima durante
+  # actualizaciones de nodo (drain) y rolling updates
+  enabled: true
+  # minAvailable: 1 → Kubernetes nunca baja a 0 réplicas
+  # durante una disrupción voluntaria
+  minAvailable: 1
+
+# ── Anotaciones para logging ──────────────────────────────────
+# Fluent Bit, Loki y otras herramientas de log aggregation
+# leen estas anotaciones para configurar el parser automáticamente.
+podAnnotations:
+  # Fluent Bit: usar parser JSON para este pod
+  fluentbit.io/parser: "json"
+  # Prometheus: scraping de métricas (si se agrega /metrics en el futuro)
+  prometheus.io/scrape: "false"
+  prometheus.io/port: "3000"

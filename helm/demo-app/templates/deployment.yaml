@@ -3,34 +3,125 @@ kind: Deployment
 metadata:
   name: {{ include "demo-app.fullname" . }}
   labels:
-    app: {{ include "demo-app.name" . }}
+    {{- include "demo-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "demo-app.name" . }}
+      {{- include "demo-app.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ include "demo-app.name" . }}
+        {{- include "demo-app.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
+      # ── ServiceAccount ──────────────────────────────────────
+      serviceAccountName: {{ include "demo-app.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+
+      # ── Pod Security Context ────────────────────────────────
+      # Aplica a todos los contenedores del pod.
+      # runAsNonRoot: K8s rechaza el pod si el contenedor
+      # intenta arrancar como root (UID 0).
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
       containers:
         - name: {{ include "demo-app.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          # ── Container Security Context ──────────────────────
+          # allowPrivilegeEscalation: false → no sudo/setuid
+          # readOnlyRootFilesystem: true   → no escribir en /
+          # capabilities.drop: ALL         → sin syscalls privilegiadas
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+
           ports:
-            - containerPort: {{ .Values.containerPort }}
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+
+          # ── Volume Mounts ───────────────────────────────────
+          # Necesario cuando readOnlyRootFilesystem: true
+          # /tmp es el único directorio escribible del contenedor
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+          # ── Health Probes ───────────────────────────────────
+          # startupProbe: protege el liveness durante el arranque.
+          # Kubernetes espera hasta failureThreshold * periodSeconds
+          # antes de declarar el pod como fallido en startup.
+          startupProbe:
+            httpGet:
+              path: {{ .Values.startupProbe.path }}
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+
+          # readinessProbe: controla si el pod recibe tráfico.
+          # Si falla → el pod se saca del Service (sin reinicio).
           readinessProbe:
             httpGet:
               path: {{ .Values.readinessProbe.path }}
               port: {{ .Values.containerPort }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+
+          # livenessProbe: si falla → K8s reinicia el contenedor.
+          # Sólo para detectar deadlocks o estados irrecuperables.
           livenessProbe:
             httpGet:
               path: {{ .Values.livenessProbe.path }}
               port: {{ .Values.containerPort }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+
+          # ── Recursos ─────────────────────────────────────────
+          # SIEMPRE definir requests y limits.
+          # Sin limits, un pod puede OOM-kill al nodo entero.
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+
+          # ── Variables de entorno ─────────────────────────────
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            # El nombre del pod se inyecta para trazabilidad en logs
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+      # ── Volúmenes ───────────────────────────────────────────
+      volumes:
+        # /tmp en emptyDir: el único directorio escribible.
+        # Se destruye cuando el pod termina (no persiste datos).
+        - name: tmp
+          emptyDir: {}
+
+      # ── Tolerancias y afinidad ───────────────────────────────
+      # Asegura distribución en múltiples nodos si hay > 1 réplica
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "demo-app.selectorLabels" . | nindent 14 }}

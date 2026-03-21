@@ -1,7 +1,19 @@
+# ==============================================================
+# gitops/values.yaml — Overrides de producción para ArgoCD
+#
+# IMPORTANTE: Este archivo es actualizado AUTOMÁTICAMENTE por
+# el pipeline (triggerci.yml → job update-gitops).
+# NO editar manualmente el campo image.tag.
+#
+# Jerarquía (mayor prioridad gana):
+#   gitops/values.yaml  ← este archivo (ArgoCD override)
+#   helm/demo-app/values.yaml ← defaults del chart
+# ==============================================================
+
 image:
   repository: "docker.io/nahumtestaccount/demo-app"
-  tag: "29cc72d9be70"
-  pullPolicy: IfNotPresent
+  tag: "29cc72d9be70"         # ← Actualizado automáticamente por CI
+  pullPolicy: Always           # Always garantiza imagen correcta con tags mutables
 
 replicaCount: 1
 
@@ -23,8 +35,50 @@ livenessProbe:
   path: /health
   initialDelaySeconds: 10
   periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
 
 readinessProbe:
   path: /health
   initialDelaySeconds: 5
   periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+startupProbe:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 12
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+networkPolicy:
+  enabled: true
+  ingressFromNamespace: "ingress-nginx"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+podAnnotations:
+  fluentbit.io/parser: "json"
+  prometheus.io/scrape: "false"
+  prometheus.io/port: "3000"

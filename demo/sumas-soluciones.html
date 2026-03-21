@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sumas y Soluciones — Crédito de Libranza para Pensionados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:       #FB5C04;
+      --orange-dark:  #d94e03;
+      --orange-light: #fff3ee;
+      --orange-mid:   #ffe0d0;
+      --gray:         #8E8E8E;
+      --gray-dark:    #333333;
+      --gray-body:    #555555;
+      --gray-light:   #f7f7f7;
+      --gray-border:  #e5e5e5;
+      --white:        #ffffff;
+      --font:         'Montserrat', sans-serif;
+      --radius-sm:    8px;
+      --radius-md:    16px;
+      --radius-lg:    32px;
+      --radius-pill:  50px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--gray-dark);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    /* ─── DEMO RIBBON ─── */
+    .demo-ribbon {
+      position: fixed;
+      top: 20px;
+      right: -34px;
+      background: var(--orange);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 6px 48px;
+      transform: rotate(45deg);
+      z-index: 9999;
+      box-shadow: 0 3px 10px rgba(251,92,4,0.45);
+    }
+
+    /* ─── TOPBAR ─── */
+    .topbar {
+      background: var(--gray-dark);
+      color: #bbb;
+      font-size: 12px;
+      padding: 9px 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .topbar a { color: #bbb; text-decoration: none; transition: color 0.15s; }
+    .topbar a:hover { color: #fff; }
+    .topbar-left, .topbar-right { display: flex; gap: 1.5rem; align-items: center; }
+    .topbar-sep { opacity: 0.3; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-border);
+      padding: 0 2rem;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .nav-logo-mark {
+      width: 42px;
+      height: 42px;
+      background: var(--orange);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .nav-logo-text { line-height: 1.15; }
+    .nav-logo-name {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--gray-dark);
+      letter-spacing: -0.02em;
+    }
+    .nav-logo-tagline {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--gray);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--gray-dark);
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      transition: background 0.18s, color 0.18s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { background: var(--gray-light); }
+
+    .nav-ctas {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .btn-nav-ghost {
+      border: 2px solid var(--orange);
+      color: var(--orange);
+      background: transparent;
+      padding: 8px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.18s, color 0.18s;
+      white-space: nowrap;
+    }
+    .btn-nav-ghost:hover { background: var(--orange); color: #fff; }
+    .btn-nav-solid {
+      background: var(--orange);
+      color: #fff;
+      border: 2px solid var(--orange);
+      padding: 8px 20px;
+      border-radius: var(--radius-pill);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.18s;
+      white-space: nowrap;
+    }
+    .btn-nav-solid:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: linear-gradient(135deg, #1c1c1c 0%, #2b1a0d 60%, #3d1f00 100%);
+      padding: 80px 2rem 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: flex-end;
+      gap: 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .hero-wrapper {
+      background: linear-gradient(135deg, #1c1c1c 0%, #2b1a0d 60%, #3d1f00 100%);
+    }
+    .hero-content { padding-bottom: 80px; }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(251,92,4,0.15);
+      border: 1px solid rgba(251,92,4,0.3);
+      color: #ff9a6e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      margin-bottom: 1.5rem;
+    }
+    .hero-eyebrow-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--orange);
+      border-radius: 50%;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 .highlight {
+      color: var(--orange);
+      position: relative;
+    }
+    .hero-desc {
+      font-size: 16px;
+      color: #bbb;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+      max-width: 460px;
+    }
+    .hero-range {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .hero-range-item {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      flex: 1;
+      min-width: 130px;
+    }
+    .hero-range-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .hero-range-value { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; }
+    .hero-range-sub { font-size: 11px; color: var(--orange); font-weight: 600; margin-top: 2px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-hero-primary {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      padding: 15px 32px;
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.18s, transform 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .btn-hero-primary:hover { background: var(--orange-dark); transform: translateY(-2px); }
+    .btn-hero-ghost {
+      background: transparent;
+      color: #fff;
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 14px 28px;
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .btn-hero-ghost:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+
+    /* Hero simulator card */
+    .hero-sim {
+      display: flex;
+      align-items: flex-end;
+    }
+    .sim-card {
+      background: var(--white);
+      border-radius: 20px 20px 0 0;
+      padding: 32px 28px 28px;
+      width: 100%;
+      max-width: 420px;
+      margin-left: auto;
+      box-shadow: 0 -12px 48px rgba(0,0,0,0.4);
+    }
+    .sim-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gray-dark);
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+    .sim-sub { font-size: 13px; color: var(--gray); margin-bottom: 24px; }
+    .sim-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .sim-amount {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--orange);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .sim-amount span { font-size: 1.4rem; vertical-align: top; margin-top: 6px; display: inline-block; }
+    .sim-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--gray-border);
+      outline: none;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .sim-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      background: var(--orange);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(251,92,4,0.4);
+    }
+    .sim-range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--gray);
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .sim-divider { height: 1px; background: var(--gray-border); margin: 18px 0; }
+    .sim-plazo-label { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .sim-plazo-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .sim-plazo-btn {
+      flex: 1;
+      min-width: 50px;
+      border: 2px solid var(--gray-border);
+      background: var(--white);
+      color: var(--gray-dark);
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.18s, color 0.18s, background 0.18s;
+      font-family: var(--font);
+    }
+    .sim-plazo-btn.active, .sim-plazo-btn:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: var(--orange-light);
+    }
+    .sim-result {
+      background: var(--orange-light);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .sim-result-item { text-align: center; }
+    .sim-result-label { font-size: 10px; font-weight: 700; color: var(--gray); text-transform: uppercase; margin-bottom: 3px; }
+    .sim-result-val { font-size: 18px; font-weight: 900; color: var(--orange); letter-spacing: -0.03em; }
+    .sim-cta {
+      width: 100%;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      padding: 15px;
+      border-radius: var(--radius-pill);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.18s;
+      font-family: var(--font);
+      letter-spacing: 0.02em;
+    }
+    .sim-cta:hover { background: var(--orange-dark); }
+    .sim-disclaimer {
+      font-size: 10px;
+      color: var(--gray);
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ─── TRUST BAR ─── */
+    .trust-bar {
+      background: var(--gray-light);
+      border-bottom: 1px solid var(--gray-border);
+      padding: 1.25rem 2rem;
+    }
+    .trust-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--gray-dark);
+    }
+    .trust-icon { font-size: 18px; }
+
+    /* ─── SECTIONS ─── */
+    .section { padding: 80px 2rem; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-inner.centered { text-align: center; }
+
+    .section-eyebrow {
+      display: inline-block;
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+      font-weight: 900;
+      color: var(--gray-dark);
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .section-lead {
+      font-size: 17px;
+      color: var(--gray-body);
+      line-height: 1.75;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+    .section-inner.centered .section-lead { margin-left: auto; margin-right: auto; }
+
+    /* ─── ¿POR QUÉ S&S? ─── */
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 2rem;
+    }
+    .pillar {
+      background: var(--white);
+      border: 1.5px solid var(--gray-border);
+      border-radius: var(--radius-md);
+      padding: 32px 28px;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.18s;
+    }
+    .pillar:hover {
+      box-shadow: 0 8px 32px rgba(251,92,4,0.12);
+      border-color: var(--orange);
+      transform: translateY(-4px);
+    }
+    .pillar-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--orange-light);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 1.25rem;
+    }
+    .pillar h3 { font-size: 17px; font-weight: 800; color: var(--gray-dark); margin-bottom: 0.6rem; letter-spacing: -0.02em; }
+    .pillar p { font-size: 14px; color: var(--gray-body); line-height: 1.7; }
+
+    /* ─── CÓMO FUNCIONA ─── */
+    .bg-light { background: var(--gray-light); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-top: 2.5rem;
+    }
+    .step {
+      text-align: center;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      top: 24px;
+      right: -14px;
+      font-size: 20px;
+      color: var(--orange);
+      font-weight: 700;
+    }
+    .step-circle {
+      width: 52px;
+      height: 52px;
+      background: var(--orange);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 16px rgba(251,92,4,0.35);
+    }
+    .step h4 { font-size: 15px; font-weight: 800; color: var(--gray-dark); margin-bottom: 6px; }
+    .step p { font-size: 13px; color: var(--gray-body); line-height: 1.6; }
+
+    /* ─── REQUISITOS ─── */
+    .reqs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .req-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .req-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+    .req-check {
+      width: 28px;
+      height: 28px;
+      background: var(--orange);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .req-text { font-size: 14px; color: var(--gray-dark); font-weight: 600; padding-top: 3px; }
+    .req-text small { display: block; font-size: 12px; color: var(--gray); font-weight: 400; margin-top: 2px; }
+
+    .reqs-visual {
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      border-radius: var(--radius-md);
+      padding: 48px 40px;
+      color: #fff;
+      text-align: center;
+    }
+    .reqs-visual-icon { font-size: 64px; margin-bottom: 1.5rem; line-height: 1; }
+    .reqs-visual h3 { font-size: 1.5rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    .reqs-visual p { font-size: 15px; opacity: 0.88; line-height: 1.65; margin-bottom: 2rem; }
+    .reqs-visual-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .reqs-stat {
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .reqs-stat-val { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.03em; }
+    .reqs-stat-lbl { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+
+    /* ─── STATS ─── */
+    .stats-band {
+      background: var(--orange);
+      padding: 64px 2rem;
+    }
+    .stats-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+    .stat { color: #fff; padding: 0 1rem; }
+    .stat + .stat { border-left: 1px solid rgba(255,255,255,0.25); }
+    .stat-num { font-size: 2.8rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin-bottom: 6px; }
+    .stat-lbl { font-size: 13px; opacity: 0.85; font-weight: 500; line-height: 1.4; }
+
+    /* ─── FAQ ─── */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 760px;
+      margin: 2.5rem auto 0;
+    }
+    .faq-item {
+      background: var(--white);
+      border: 1.5px solid var(--gray-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color 0.18s;
+    }
+    .faq-item.open { border-color: var(--orange); }
+    .faq-q {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-dark);
+      gap: 1rem;
+      user-select: none;
+    }
+    .faq-q:hover { color: var(--orange); }
+    .faq-arrow {
+      width: 28px;
+      height: 28px;
+      background: var(--orange-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      color: var(--orange);
+      font-weight: 700;
+      transition: transform 0.25s, background 0.18s;
+    }
+    .faq-item.open .faq-arrow { transform: rotate(45deg); background: var(--orange); color: #fff; }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.25s;
+    }
+    .faq-item.open .faq-a { max-height: 300px; }
+    .faq-a-inner {
+      padding: 0 22px 20px;
+      font-size: 14px;
+      color: var(--gray-body);
+      line-height: 1.75;
+      border-top: 1px solid var(--gray-border);
+      padding-top: 16px;
+    }
+
+    /* ─── CTA BAND ─── */
+    .cta-band {
+      background: linear-gradient(135deg, #1c1c1c 0%, #3d1f00 100%);
+      padding: 80px 2rem;
+      text-align: center;
+    }
+    .cta-band h2 {
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .cta-band h2 span { color: var(--orange); }
+    .cta-band p { font-size: 17px; color: #aaa; max-width: 520px; margin: 0 auto 2.5rem; line-height: 1.7; }
+    .cta-band-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: #111;
+      color: #888;
+      padding: 3.5rem 2rem 2rem;
+    }
+    .footer-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 2.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      margin-bottom: 1.5rem;
+    }
+    .footer-brand h3 { color: #fff; font-size: 17px; font-weight: 800; margin-bottom: 0.6rem; letter-spacing: -0.02em; }
+    .footer-brand p { font-size: 13px; line-height: 1.7; max-width: 260px; margin-bottom: 1.25rem; }
+    .footer-social { display: flex; gap: 8px; }
+    .social-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      text-decoration: none;
+      transition: background 0.18s;
+    }
+    .social-btn:hover { background: var(--orange); }
+    .footer-col h4 { color: #ddd; font-size: 13px; font-weight: 700; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .footer-col a { color: #888; font-size: 13px; text-decoration: none; transition: color 0.15s; }
+    .footer-col a:hover { color: var(--orange); }
+    .footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 12px;
+    }
+    .footer-demo-tag {
+      background: rgba(251,92,4,0.15);
+      border: 1px solid rgba(251,92,4,0.3);
+      color: #ff9a6e;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: var(--radius-pill);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; gap: 0; padding-bottom: 0; }
+      .hero-content { padding-bottom: 48px; }
+      .sim-card { border-radius: 20px; max-width: 100%; margin: 0; }
+      .hero-sim { padding-bottom: 48px; }
+      .pillars { grid-template-columns: 1fr 1fr; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .step::after { display: none; }
+      .reqs-grid { grid-template-columns: 1fr; }
+      .stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .topbar { flex-direction: column; gap: 6px; text-align: center; font-size: 11px; }
+      .nav-links { display: none; }
+      .pillars { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .stat + .stat { border-left: none; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .hero-range { flex-direction: column; }
+      .nav-ctas .btn-nav-ghost { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DEMO RIBBON -->
+  <div class="demo-ribbon">DEMO</div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span>📍 Bogotá, Colombia</span>
+      <span class="topbar-sep">|</span>
+      <a href="#">📞 +57 (601) 000-0000</a>
+      <span class="topbar-sep">|</span>
+      <a href="#">💬 WhatsApp</a>
+    </div>
+    <div class="topbar-right">
+      <a href="#">PQRS</a>
+      <span class="topbar-sep">|</span>
+      <a href="#">Trabaja con nosotros</a>
+      <span class="topbar-sep">|</span>
+      <a href="#">Portal Pagadurías</a>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">S&amp;S</div>
+      <div class="nav-logo-text">
+        <span class="nav-logo-name">Sumas y Soluciones</span>
+        <span class="nav-logo-tagline">Libranzas para pensionados</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#como-funciona">¿Cómo funciona?</a></li>
+      <li><a href="#requisitos">Requisitos</a></li>
+      <li><a href="#beneficios">Beneficios</a></li>
+      <li><a href="#faq">Preguntas frecuentes</a></li>
+    </ul>
+    <div class="nav-ctas">
+      <a href="#" class="btn-nav-ghost">PAGA TU CRÉDITO</a>
+      <a href="#simulador" class="btn-nav-solid">SOLICITA TU CRÉDITO</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero-wrapper">
+    <div class="hero">
+
+      <!-- Contenido izquierdo -->
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <span class="hero-eyebrow-dot"></span>
+          Crédito de libranza para pensionados
+        </div>
+        <h1>
+          El crédito que<br/>
+          <span class="highlight">te merecías,</span><br/>
+          sin complicaciones
+        </h1>
+        <p class="hero-desc">
+          En Sumas y Soluciones llevamos años ayudando a los pensionados colombianos
+          a acceder a créditos de libranza rápidos, seguros y sin papeleo innecesario.
+          Tu pensión es tu garantía.
+        </p>
+        <div class="hero-range">
+          <div class="hero-range-item">
+            <div class="hero-range-label">Desde</div>
+            <div class="hero-range-value">$2.000.000</div>
+            <div class="hero-range-sub">COP</div>
+          </div>
+          <div class="hero-range-item">
+            <div class="hero-range-label">Hasta</div>
+            <div class="hero-range-value">$150.000.000</div>
+            <div class="hero-range-sub">COP</div>
+          </div>
+          <div class="hero-range-item">
+            <div class="hero-range-label">Plazo</div>
+            <div class="hero-range-value">Hasta 120</div>
+            <div class="hero-range-sub">meses</div>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="#simulador" class="btn-hero-primary">Simula tu crédito →</a>
+          <a href="#como-funciona" class="btn-hero-ghost">¿Cómo funciona?</a>
+        </div>
+      </div>
+
+      <!-- Simulador derecho -->
+      <div class="hero-sim" id="simulador">
+        <div class="sim-card">
+          <div class="sim-title">Simula tu crédito</div>
+          <div class="sim-sub">Ajusta los valores y conoce tu cuota estimada</div>
+
+          <div class="sim-label">¿Cuánto necesitas?</div>
+          <div class="sim-amount"><span>$</span><span id="sim-val">20.000.000</span></div>
+          <input
+            type="range"
+            class="sim-slider"
+            id="sim-slider"
+            min="2"
+            max="150"
+            value="20"
+            step="1"
+            oninput="updateSim()"
+          />
+          <div class="sim-range-labels">
+            <span>$2.000.000</span>
+            <span>$150.000.000</span>
+          </div>
+
+          <div class="sim-divider"></div>
+
+          <div class="sim-plazo-label">Plazo (meses)</div>
+          <div class="sim-plazo-options">
+            <button class="sim-plazo-btn" onclick="selectPlazo(this, 12)">12</button>
+            <button class="sim-plazo-btn" onclick="selectPlazo(this, 24)">24</button>
+            <button class="sim-plazo-btn active" onclick="selectPlazo(this, 36)">36</button>
+            <button class="sim-plazo-btn" onclick="selectPlazo(this, 60)">60</button>
+            <button class="sim-plazo-btn" onclick="selectPlazo(this, 84)">84</button>
+            <button class="sim-plazo-btn" onclick="selectPlazo(this, 120)">120</button>
+          </div>
+
+          <div class="sim-result">
+            <div class="sim-result-item">
+              <div class="sim-result-label">Cuota estimada</div>
+              <div class="sim-result-val" id="cuota-val">$672.000</div>
+            </div>
+            <div class="sim-result-item">
+              <div class="sim-result-label">Tasa mensual</div>
+              <div class="sim-result-val">1.52%</div>
+            </div>
+            <div class="sim-result-item">
+              <div class="sim-result-label">Plazo</div>
+              <div class="sim-result-val" id="plazo-val">36 m</div>
+            </div>
+          </div>
+
+          <button class="sim-cta">Solicitar este crédito →</button>
+          <div class="sim-disclaimer">
+            * Simulación informativa. Sujeta a estudio de crédito.<br/>
+            Supervisado por la Superintendencia Financiera de Colombia.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TRUST BAR -->
+  <div class="trust-bar">
+    <div class="trust-inner">
+      <div class="trust-item">
+        <span class="trust-icon">🏛️</span>
+        Vigilados por SFC
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">🔒</span>
+        Ley 1581 — Protección de datos
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">✅</span>
+        Ley 2300 — Sin llamadas no autorizadas
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">🛡️</span>
+        ISO 27001 — Seguridad
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">⚡</span>
+        Aprobación en 24 horas
+      </div>
+    </div>
+  </div>
+
+  <!-- ¿POR QUÉ S&S? -->
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-eyebrow">Somos Sumas y Soluciones</div>
+      <h2 class="section-title">Tu tranquilidad financiera,<br/>nuestra razón de ser</h2>
+      <p class="section-lead">
+        Llevamos años acompañando a los pensionados colombianos con créditos de libranza
+        transparentes, seguros y diseñados para mejorar su calidad de vida.
+      </p>
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pillar-icon">⚡</div>
+          <h3>Rápido y Digital</h3>
+          <p>Solicita desde tu celular o computador sin desplazamientos. Aprobación en 24 horas y desembolso directo a tu cuenta.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">🔍</div>
+          <h3>Transparencia Total</h3>
+          <p>Sin letras pequeñas ni cobros sorpresa. Conoces exactamente cuánto pagas cada mes antes de firmar.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">🤝</div>
+          <h3>Hecho para Pensionados</h3>
+          <p>Diseñado específicamente para pensionados de Colpensiones y fondos privados. Tu pensión es tu garantía, sin codeudores.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section class="section bg-light" id="como-funciona">
+    <div class="section-inner centered">
+      <div class="section-eyebrow">Proceso simple</div>
+      <h2 class="section-title">¿Cómo obtienes tu crédito?</h2>
+      <p class="section-lead">4 pasos y listo. Sin filas, sin papelería innecesaria, sin complicaciones.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-circle">📋</div>
+          <h4>Simula</h4>
+          <p>Elige el monto y plazo que necesitas. Conoce tu cuota al instante.</p>
+        </div>
+        <div class="step">
+          <div class="step-circle">📄</div>
+          <h4>Solicita</h4>
+          <p>Completa tu información básica y carga tus documentos en minutos.</p>
+        </div>
+        <div class="step">
+          <div class="step-circle">✅</div>
+          <h4>Aprobación</h4>
+          <p>Nuestro equipo estudia tu solicitud. Respuesta en menos de 24 horas.</p>
+        </div>
+        <div class="step">
+          <div class="step-circle">💰</div>
+          <h4>Desembolso</h4>
+          <p>El dinero llega directo a tu cuenta. La cuota se descuenta de tu pensión.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-band">
+    <div class="stats-inner">
+      <div class="stat">
+        <div class="stat-num">+15.000</div>
+        <div class="stat-lbl">Pensionados beneficiados</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">$4.2B</div>
+        <div class="stat-lbl">COP desembolsados</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">24h</div>
+        <div class="stat-lbl">Tiempo promedio de aprobación</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">98%</div>
+        <div class="stat-lbl">Clientes satisfechos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUISITOS -->
+  <section class="section" id="requisitos">
+    <div class="section-inner">
+      <div class="reqs-grid">
+        <div>
+          <div class="section-eyebrow">Requisitos</div>
+          <h2 class="section-title">¿Quién puede solicitar?</h2>
+          <p class="section-lead" style="margin-bottom:2rem;">
+            Si eres pensionado en Colombia y tu descuento de libranza no supera el 50% de tu mesada, puedes aplicar.
+          </p>
+          <div class="req-list">
+            <div class="req-item">
+              <div class="req-check">✓</div>
+              <div class="req-text">
+                Ser pensionado de Colpensiones o fondo privado
+                <small>Pensión de vejez, invalidez o sobrevivencia</small>
+              </div>
+            </div>
+            <div class="req-item">
+              <div class="req-check">✓</div>
+              <div class="req-text">
+                Cédula de ciudadanía vigente
+                <small>Cualquier ciudad de Colombia</small>
+              </div>
+            </div>
+            <div class="req-item">
+              <div class="req-check">✓</div>
+              <div class="req-text">
+                Último desprendible de pago
+                <small>Comprobante de mesada pensional</small>
+              </div>
+            </div>
+            <div class="req-item">
+              <div class="req-check">✓</div>
+              <div class="req-text">
+                Cupo de libranza disponible
+                <small>Descuento total no mayor al 50% de la mesada</small>
+              </div>
+            </div>
+            <div class="req-item">
+              <div class="req-check">✓</div>
+              <div class="req-text">
+                Cuenta bancaria a tu nombre
+                <small>En cualquier banco colombiano</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="reqs-visual">
+          <div class="reqs-visual-icon">🎉</div>
+          <h3>Sin codeudores.<br/>Sin hipotecas.</h3>
+          <p>Tu pensión es tu garantía. No necesitas poner en riesgo tus bienes ni involucrar a tu familia.</p>
+          <div class="reqs-visual-stats">
+            <div class="reqs-stat">
+              <div class="reqs-stat-val">0</div>
+              <div class="reqs-stat-lbl">Codeudores requeridos</div>
+            </div>
+            <div class="reqs-stat">
+              <div class="reqs-stat-val">0</div>
+              <div class="reqs-stat-lbl">Fiadores necesarios</div>
+            </div>
+            <div class="reqs-stat">
+              <div class="reqs-stat-val">5</div>
+              <div class="reqs-stat-lbl">Documentos máx.</div>
+            </div>
+            <div class="reqs-stat">
+              <div class="reqs-stat-val">24h</div>
+              <div class="reqs-stat-lbl">Respuesta garantizada</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFICIOS -->
+  <section class="section bg-light" id="beneficios">
+    <div class="section-inner centered">
+      <div class="section-eyebrow">Beneficios</div>
+      <h2 class="section-title">¿Por qué elegir Sumas y Soluciones?</h2>
+      <p class="section-lead">Más que un crédito, una alianza para tu bienestar financiero.</p>
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pillar-icon">📱</div>
+          <h3>100% Digital</h3>
+          <p>Solicita, firma y recibe tu dinero sin salir de casa. Todo desde tu celular o computador.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">💳</div>
+          <h3>Descuento automático</h3>
+          <p>La cuota se descuenta directamente de tu mesada. Nunca olvides un pago ni pagues recargos.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">📊</div>
+          <h3>Tasa competitiva</h3>
+          <p>Accede a tasas diseñadas para pensionados, siempre por debajo de la tasa máxima de usura.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">🕐</div>
+          <h3>Atención personalizada</h3>
+          <p>Un asesor real te acompaña en todo el proceso. Sin bots, sin IVR, sin esperas interminables.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">🔐</div>
+          <h3>Datos protegidos</h3>
+          <p>Cumplimos Ley 1581 y estándares ISO 27001. Tu información nunca será compartida sin tu autorización.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-icon">📞</div>
+          <h3>Sin llamadas no deseadas</h3>
+          <p>Respetamos la Ley 2300. Solo te contactamos con tu autorización explícita, cuando tú lo decides.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="section-inner centered">
+      <div class="section-eyebrow">Preguntas frecuentes</div>
+      <h2 class="section-title">Resolvemos tus dudas</h2>
+      <p class="section-lead">Todo lo que necesitas saber antes de solicitar tu crédito de libranza.</p>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Qué es un crédito de libranza?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              Un crédito de libranza es un préstamo cuyas cuotas se descuentan directamente de tu mesada pensional o salario, con autorización del pagador (Colpensiones o tu fondo de pensiones). Esto garantiza el pago automático y te permite acceder a mejores tasas de interés.
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Cuánto dinero puedo solicitar?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              Puedes solicitar desde $2.000.000 hasta $150.000.000 COP, dependiendo del monto de tu mesada pensional y el cupo de libranza disponible. El descuento total de libranzas no puede superar el 50% de tu pensión, según la normativa colombiana.
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Cuánto tiempo tarda la aprobación?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              Una vez completos todos tus documentos, el estudio de crédito tarda máximo 24 horas hábiles. Si tu solicitud es aprobada, el desembolso se realiza en los siguientes 1 a 3 días hábiles directamente a tu cuenta bancaria.
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Necesito un codeudor o garantía?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              No. En los créditos de libranza tu pensión es la garantía. No necesitas codeudores, fiadores, hipotecas ni ningún tipo de garantía adicional. Esto es una de las grandes ventajas de este tipo de crédito para los pensionados.
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Puedo solicitar si ya tengo otras libranzas?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              Sí, siempre y cuando el total de descuentos de libranza activos no supere el 50% de tu mesada pensional. Durante la simulación y el estudio de crédito verificamos tu cupo disponible para informarte exactamente cuánto puedes solicitar.
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Cómo se calculan los intereses?
+            <span class="faq-arrow">+</span>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              Los intereses se calculan sobre el saldo vigente del crédito y siempre se mantienen por debajo de la tasa máxima de usura certificada mensualmente por la Superintendencia Financiera de Colombia. Antes de firmar, recibes un extracto con la tabla de amortización completa.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <div class="cta-band">
+    <h2>Tu crédito te está<br/><span>esperando</span></h2>
+    <p>Miles de pensionados colombianos ya confían en Sumas y Soluciones. Simula tu crédito hoy y recibe el dinero que necesitas en 24 horas.</p>
+    <div class="cta-band-actions">
+      <a href="#simulador" class="btn-hero-primary">Simula tu crédito gratis →</a>
+      <a href="#" class="btn-hero-ghost">Hablar con un asesor</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h3>Sumas y Soluciones</h3>
+        <p>Especialistas en crédito de libranza para pensionados colombianos. Transparencia, rapidez y respeto por tu bienestar financiero.</p>
+        <div class="footer-social">
+          <a href="#" class="social-btn">📘</a>
+          <a href="#" class="social-btn">📸</a>
+          <a href="#" class="social-btn">💼</a>
+          <a href="#" class="social-btn">🐦</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Créditos</h4>
+        <ul>
+          <li><a href="#">Crédito de libranza</a></li>
+          <li><a href="#">Simulador</a></li>
+          <li><a href="#">Requisitos</a></li>
+          <li><a href="#">Solicitar crédito</a></li>
+          <li><a href="#">Pagar crédito</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Empresa</h4>
+        <ul>
+          <li><a href="#">Nosotros</a></li>
+          <li><a href="#">Trabaja con nosotros</a></li>
+          <li><a href="#">Portal pagadurías</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">PQRS</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Términos y condiciones</a></li>
+          <li><a href="#">Política de privacidad</a></li>
+          <li><a href="#">Ley 1581 — Habeas Data</a></li>
+          <li><a href="#">Ley 2300</a></li>
+          <li><a href="#">Defensor del consumidor</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Sumas y Soluciones S.A.S. — Vigilado Superintendencia Financiera de Colombia</span>
+      <span class="footer-demo-tag">⚠ DEMO — No productivo</span>
+    </div>
+  </footer>
+
+  <script>
+    // ─── Simulador ───
+    let plazoActual = 36;
+    const TASA_MENSUAL = 0.0152;
+
+    function formatCOP(n) {
+      return '$' + Math.round(n).toLocaleString('es-CO');
+    }
+
+    function calcularCuota(monto, meses) {
+      const r = TASA_MENSUAL;
+      return monto * (r * Math.pow(1 + r, meses)) / (Math.pow(1 + r, meses) - 1);
+    }
+
+    function updateSim() {
+      const v = parseInt(document.getElementById('sim-slider').value);
+      const monto = v * 1_000_000;
+      document.getElementById('sim-val').textContent = monto.toLocaleString('es-CO');
+      const cuota = calcularCuota(monto, plazoActual);
+      document.getElementById('cuota-val').textContent = formatCOP(cuota);
+      // Paint slider fill
+      const slider = document.getElementById('sim-slider');
+      const pct = ((v - 2) / (150 - 2)) * 100;
+      slider.style.background = `linear-gradient(to right, #FB5C04 ${pct}%, #e5e5e5 ${pct}%)`;
+    }
+
+    function selectPlazo(btn, meses) {
+      document.querySelectorAll('.sim-plazo-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      plazoActual = meses;
+      document.getElementById('plazo-val').textContent = meses + ' m';
+      updateSim();
+    }
+
+    // ─── FAQ ───
+    function toggleFaq(el) {
+      const item = el.parentElement;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    }
+
+    // Init
+    updateSim();
+  </script>
+</body>
+</html>

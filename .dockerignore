@@ -1,0 +1,58 @@
+# ==============================================================
+# .dockerignore — excluir archivos innecesarios del build context
+# Reduce el tamaño del context, evita copiar secretos y archivos
+# de desarrollo al interior de la imagen
+# ==============================================================
+
+# Dependencias de Node — se instalan dentro del build con npm ci
+app/node_modules
+node_modules
+
+# Reportes y cobertura generados localmente
+app/coverage
+coverage
+report_*.*
+zap_report*.*
+*.sarif
+sbom.spdx.json
+
+# Control de versiones
+.git
+.gitignore
+
+# CI/CD — no necesarios en la imagen
+.github
+.zap
+
+# Archivos de desarrollo y configuración local
+*.env
+.env*
+*.local
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docker — no recursión
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentación
+README.md
+CHANGELOG.md
+*.md
+
+# Tests — no van a producción
+app/test
+app/jest.config.js
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db

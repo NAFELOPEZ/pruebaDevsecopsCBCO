@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Portal — DevSecOps CBCO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --card-bg: #111827;
+      --border: rgba(255,255,255,0.08);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --sumas-primary: #6366f1;
+      --sumas-accent: #f97316;
+      --cbco-primary: #1d4ed8;
+      --cbco-accent: #10b981;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(29,78,216,0.1), transparent);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #a5b4fc;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      margin-bottom: 2rem;
+    }
+    .badge::before { content: "●"; font-size: 0.5rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    h1 span { color: #818cf8; }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 3.5rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 740px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 1.25rem;
+    }
+    .card:hover { transform: translateY(-4px); }
+    .card:hover::before { opacity: 1; }
+
+    .card-sumas { --c1: #6366f1; --c2: #f97316; }
+    .card-sumas:hover { border-color: rgba(99,102,241,0.5); box-shadow: 0 20px 60px -10px rgba(99,102,241,0.25); }
+    .card-sumas::before { background: radial-gradient(circle at top right, rgba(99,102,241,0.08), transparent 60%); }
+
+    .card-cbco { --c1: #1d4ed8; --c2: #10b981; }
+    .card-cbco:hover { border-color: rgba(29,78,216,0.5); box-shadow: 0 20px 60px -10px rgba(29,78,216,0.25); }
+    .card-cbco::before { background: radial-gradient(circle at top right, rgba(29,78,216,0.08), transparent 60%); }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-sumas .card-icon { background: rgba(99,102,241,0.15); }
+    .card-cbco .card-icon { background: rgba(29,78,216,0.15); }
+
+    .card h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .card-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.75rem; }
+    .tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .card-arrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: gap 0.2s ease;
+    }
+    .card-sumas .card-arrow { color: #818cf8; }
+    .card-cbco .card-arrow { color: #60a5fa; }
+    .card:hover .card-arrow { gap: 0.7rem; }
+
+    footer {
+      margin-top: 4rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">Demo Environment · No Productivo</div>
+
+  <h1>Selecciona una <span>Demo</span></h1>
+  <p class="subtitle">
+    Elige la presentación que deseas mostrar al cliente.
+    Todas las demos funcionan sin instalación adicional.
+  </p>
+
+  <div class="cards">
+    <a href="sumas-soluciones.html" class="card card-sumas">
+      <div class="card-icon">⚡</div>
+      <h2>Sumas y Soluciones</h2>
+      <p>Plataforma de transformación digital e innovación tecnológica para empresas del sector.</p>
+      <div class="card-tags">
+        <span class="tag">Tecnología</span>
+        <span class="tag">Innovación</span>
+        <span class="tag">DevSecOps</span>
+      </div>
+      <div class="card-arrow">Ver demo →</div>
+    </a>
+
+    <a href="credibanco.html" class="card card-cbco">
+      <div class="card-icon">🏦</div>
+      <h2>Credibanco</h2>
+      <p>Soluciones de pagos digitales, procesamiento de transacciones y seguridad financiera.</p>
+      <div class="card-tags">
+        <span class="tag">Fintech</span>
+        <span class="tag">Pagos</span>
+        <span class="tag">Seguridad</span>
+      </div>
+      <div class="card-arrow">Ver demo →</div>
+    </a>
+  </div>
+
+  <footer>Demo DevSecOps CBCO · Entorno no productivo · Solo para presentaciones internas</footer>
+</body>
+</html>

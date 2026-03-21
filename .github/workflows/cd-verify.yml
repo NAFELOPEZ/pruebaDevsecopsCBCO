@@ -1,0 +1,378 @@
+# ==============================================================
+# cd-verify.yml — Pipeline de CD: Verify Deployment + Rollback
+#
+# Se dispara cuando el PR de GitOps hace merge a main
+# (es decir, cuando gitops/values.yaml cambia en main).
+#
+# FLUJO:
+#   deploy-verify  →  espera ArgoCD sync + smoke tests
+#         ↓ (en fallo)
+#     rollback    →  argocd app rollback + notificación
+#
+# PREREQUISITOS (secrets requeridos):
+#   ARGOCD_SERVER   — hostname del servidor ArgoCD (sin https://)
+#                     Ej: argocd.midominio.com
+#   ARGOCD_TOKEN    — token de service account en ArgoCD
+#                     Crear: argocd account generate-token --account pipeline
+#   DEPLOY_APP_URL  — URL pública de la app después del deploy
+#                     Ej: https://demo-app.midominio.com
+#
+# Si estos secrets NO están configurados, el workflow finaliza
+# con éxito pero sin verificar el deploy (modo degradado).
+# Esto permite usar el repo sin un cluster K8s real.
+#
+# VERSIONES:
+#   ArgoCD CLI: v2.13.3 — compatible con ArgoCD 2.x server
+# ==============================================================
+
+name: cd-verify
+
+on:
+  push:
+    branches:
+      - main
+    # Disparar SÓLO cuando cambia el archivo de GitOps
+    # Esto evita correr CD en cambios de código (que tienen su propio CI)
+    paths:
+      - 'gitops/values.yaml'
+
+# Denegar todos los permisos por defecto
+permissions: {}
+
+env:
+  ARGOCD_CLI_VERSION: "v2.13.3"
+  APP_NAME: "demo-app"
+
+# ==============================================================
+# JOB 1: Verificar deployment — ArgoCD sync + smoke tests
+# ==============================================================
+jobs:
+  deploy-verify:
+    name: CD — Verify Deployment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write    # Para actualizar GitHub Deployment status
+
+    outputs:
+      image_tag: ${{ steps.get-tag.outputs.image_tag }}
+      deployment_id: ${{ steps.find-deployment.outputs.deployment_id }}
+
+    steps:
+      # ── Checkout para leer gitops/values.yaml ─────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extraer el image tag del values.yaml actualizado
+      - name: Extract deployed image tag
+        id: get-tag
+        run: |
+          IMAGE_TAG=$(grep 'tag:' gitops/values.yaml | head -1 | sed 's/.*tag: *"\?\([^"]*\)"\?.*/\1/')
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Verificando deploy de tag: ${IMAGE_TAG}"
+
+      # Buscar el GitHub Deployment ID creado por triggerci.yml
+      - name: Find GitHub Deployment ID
+        id: find-deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Buscar el deployment más reciente en ambiente 'production'
+          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
+            -H "Accept: application/vnd.github+json" \
+            --jq '[.[] | select(.environment == "production")] | first | .id' \
+            2>/dev/null || echo "")
+
+          if [ -z "$DEPLOYMENT_ID" ] || [ "$DEPLOYMENT_ID" = "null" ]; then
+            echo "⚠️ No se encontró GitHub Deployment ID — continuando sin status update"
+            DEPLOYMENT_ID="none"
+          fi
+
+          echo "deployment_id=${DEPLOYMENT_ID}" >> "$GITHUB_OUTPUT"
+          echo "Deployment ID: ${DEPLOYMENT_ID}"
+
+      # ── Marcar deployment como 'in_progress' ──────────────
+      - name: Update GitHub Deployment Status → in_progress
+        if: steps.find-deployment.outputs.deployment_id != 'none'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/deployments/${{ steps.find-deployment.outputs.deployment_id }}/statuses \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -f state="in_progress" \
+            -f description="Verificando deploy ${{ steps.get-tag.outputs.image_tag }}"
+
+      # ── Verificar si ArgoCD está configurado ──────────────
+      - name: Check ArgoCD configuration
+        id: argocd-check
+        run: |
+          if [ -z "${{ secrets.ARGOCD_SERVER }}" ] || [ -z "${{ secrets.ARGOCD_TOKEN }}" ]; then
+            echo "⚠️ ARGOCD_SERVER o ARGOCD_TOKEN no configurados"
+            echo "   El workflow continuará en modo degradado (sin verificación ArgoCD)"
+            echo "   Agregar los secrets para habilitar verificación completa del deploy"
+            echo "argocd_available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ ArgoCD configurado"
+            echo "argocd_available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Instalar ArgoCD CLI ────────────────────────────────
+      - name: Install ArgoCD CLI ${{ env.ARGOCD_CLI_VERSION }}
+        if: steps.argocd-check.outputs.argocd_available == 'true'
+        run: |
+          curl -sSL -o /usr/local/bin/argocd \
+            "https://github.com/argoproj/argo-cd/releases/download/${{ env.ARGOCD_CLI_VERSION }}/argocd-linux-amd64"
+          chmod +x /usr/local/bin/argocd
+          argocd version --client
+
+      # ── Esperar a que ArgoCD sincronice ───────────────────
+      # argocd app wait: bloquea hasta que la app está Healthy y Synced
+      # --timeout 300: máximo 5 minutos
+      # --insecure: si el servidor ArgoCD usa TLS auto-firmado
+      - name: Wait for ArgoCD sync — ${{ env.APP_NAME }}
+        if: steps.argocd-check.outputs.argocd_available == 'true'
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+        run: |
+          echo "Esperando sync de ArgoCD para '${{ env.APP_NAME }}'..."
+          argocd app wait ${{ env.APP_NAME }} \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --insecure \
+            --health \
+            --sync \
+            --timeout 300
+
+          echo "=== Estado final de la app ==="
+          argocd app get ${{ env.APP_NAME }} \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --insecure
+
+      # ── Smoke Tests post-deploy ────────────────────────────
+      # Verifican que la app responde correctamente en K8s
+      # después del deploy.
+      - name: Check smoke test configuration
+        id: smoke-check
+        run: |
+          if [ -z "${{ secrets.DEPLOY_APP_URL }}" ]; then
+            echo "⚠️ DEPLOY_APP_URL no configurado — smoke tests saltados"
+            echo "   Agregar el secret para habilitar smoke tests post-deploy"
+            echo "smoke_available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ URL de deploy configurada"
+            echo "smoke_available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke tests — verify deployment
+        if: steps.smoke-check.outputs.smoke_available == 'true'
+        env:
+          APP_URL: ${{ secrets.DEPLOY_APP_URL }}
+        run: |
+          echo "🔍 Ejecutando smoke tests contra: ${APP_URL}"
+          echo ""
+
+          # Test 1: GET /
+          echo "--- Test 1: GET / ---"
+          RESPONSE=$(curl -sf --max-time 10 "${APP_URL}/" 2>&1)
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ FALLO: GET / no respondió (exit ${EXIT_CODE})"
+            exit 1
+          fi
+          echo "${RESPONSE}" | jq -r '.message' | grep -q "Hello from DevSecOps" || {
+            echo "❌ FALLO: GET / no retorna mensaje esperado"
+            echo "   Respuesta recibida: ${RESPONSE}"
+            exit 1
+          }
+          echo "✅ GET / → OK"
+
+          # Test 2: GET /health
+          echo "--- Test 2: GET /health ---"
+          HEALTH_RESP=$(curl -sf --max-time 10 "${APP_URL}/health" 2>&1)
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ FALLO: GET /health no respondió (exit ${EXIT_CODE})"
+            exit 1
+          fi
+          STATUS=$(echo "${HEALTH_RESP}" | jq -r '.status' 2>/dev/null)
+          if [ "${STATUS}" != "ok" ]; then
+            echo "❌ FALLO: /health.status='${STATUS}' (esperado: 'ok')"
+            echo "   Respuesta recibida: ${HEALTH_RESP}"
+            exit 1
+          fi
+          echo "✅ GET /health → status=ok"
+
+          # Test 3: GET /health?full=true
+          echo "--- Test 3: GET /health?full=true ---"
+          FULL_RESP=$(curl -sf --max-time 10 "${APP_URL}/health?full=true" 2>&1)
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ FALLO: GET /health?full=true no respondió (exit ${EXIT_CODE})"
+            exit 1
+          fi
+          MODE=$(echo "${FULL_RESP}" | jq -r '.mode' 2>/dev/null)
+          if [ "${MODE}" != "full" ]; then
+            echo "❌ FALLO: /health?full=true.mode='${MODE}' (esperado: 'full')"
+            echo "   Respuesta recibida: ${FULL_RESP}"
+            exit 1
+          fi
+          echo "✅ GET /health?full=true → mode=full"
+
+          echo ""
+          echo "✅ ¡Todos los smoke tests pasaron!"
+          echo "   Tag: ${{ steps.get-tag.outputs.image_tag }}"
+          echo "   URL: ${APP_URL}"
+
+      # ── Actualizar GitHub Deployment Status → success ─────
+      - name: Update GitHub Deployment Status → success
+        if: |
+          success() &&
+          steps.find-deployment.outputs.deployment_id != 'none'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/deployments/${{ steps.find-deployment.outputs.deployment_id }}/statuses \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -f state="success" \
+            -f description="Deploy ${{ steps.get-tag.outputs.image_tag }} verificado" \
+            -f environment_url="${{ secrets.DEPLOY_APP_URL }}"
+
+      # ── Actualizar GitHub Deployment Status → failure ─────
+      - name: Update GitHub Deployment Status → failure
+        if: |
+          failure() &&
+          steps.find-deployment.outputs.deployment_id != 'none'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/deployments/${{ steps.find-deployment.outputs.deployment_id }}/statuses \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -f state="failure" \
+            -f description="Deploy ${{ steps.get-tag.outputs.image_tag }} falló — ver rollback"
+
+      # ── Resumen en GitHub Actions Summary ─────────────────
+      - name: CD Summary
+        if: always()
+        run: |
+          echo "## CD Verification — ${{ steps.get-tag.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.argocd-check.outputs.argocd_available }}" = "true" ]; then
+            echo "| ArgoCD Sync | ✅ Synced + Healthy |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ArgoCD Sync | ⚠️ Skipped (ARGOCD_SERVER no configurado) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.smoke-check.outputs.smoke_available }}" = "true" ]; then
+            echo "| Smoke Tests | ✅ Todos pasaron |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Smoke Tests | ⚠️ Skipped (DEPLOY_APP_URL no configurado) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Imagen desplegada:** \`${{ env.APP_NAME }}:${{ steps.get-tag.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+
+# ==============================================================
+# JOB 2: Rollback automático si deploy-verify falla
+# ==============================================================
+  rollback:
+    name: CD — Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-verify]
+    # Sólo corre si deploy-verify falló
+    if: failure()
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Check ArgoCD configuration for rollback
+        id: argocd-check
+        run: |
+          if [ -z "${{ secrets.ARGOCD_SERVER }}" ] || [ -z "${{ secrets.ARGOCD_TOKEN }}" ]; then
+            echo "⚠️ ARGOCD_SERVER o ARGOCD_TOKEN no configurados"
+            echo "   Rollback automático no disponible — rollback manual requerido:"
+            echo "   argocd app rollback ${{ env.APP_NAME }}"
+            echo "argocd_available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "argocd_available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install ArgoCD CLI ${{ env.ARGOCD_CLI_VERSION }}
+        if: steps.argocd-check.outputs.argocd_available == 'true'
+        run: |
+          curl -sSL -o /usr/local/bin/argocd \
+            "https://github.com/argoproj/argo-cd/releases/download/${{ env.ARGOCD_CLI_VERSION }}/argocd-linux-amd64"
+          chmod +x /usr/local/bin/argocd
+
+      # Rollback a la revisión inmediatamente anterior
+      - name: Execute ArgoCD rollback
+        if: steps.argocd-check.outputs.argocd_available == 'true'
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+        run: |
+          echo "⚠️ Smoke tests fallaron — ejecutando rollback automático"
+          echo "   App: ${{ env.APP_NAME }}"
+          echo "   Server: ${ARGOCD_SERVER}"
+
+          argocd app rollback ${{ env.APP_NAME }} \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --insecure
+
+          echo "Esperando que el rollback complete..."
+          argocd app wait ${{ env.APP_NAME }} \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --insecure \
+            --health \
+            --timeout 180
+
+          echo "=== Estado post-rollback ==="
+          argocd app get ${{ env.APP_NAME }} \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --insecure
+
+      # Marcar el GitHub Deployment como 'inactive' tras rollback
+      - name: Update GitHub Deployment Status → inactive (rollback)
+        if: needs.deploy-verify.outputs.deployment_id != 'none'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/deployments/${{ needs.deploy-verify.outputs.deployment_id }}/statuses \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -f state="inactive" \
+            -f description="Rollback ejecutado — deploy ${{ needs.deploy-verify.outputs.image_tag }} revertido" \
+          || echo "⚠️ No se pudo actualizar el deployment status"
+
+      - name: Rollback Summary
+        if: always()
+        run: |
+          echo "## ⚠️ Rollback Ejecutado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "El deploy de \`${{ needs.deploy-verify.outputs.image_tag }}\` falló." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.argocd-check.outputs.argocd_available }}" = "true" ]; then
+            echo "✅ Rollback automático ejecutado vía ArgoCD CLI." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Rollback manual requerido — ARGOCD_SERVER no configurado." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "argocd app rollback ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Acción requerida:** Revisar los logs de smoke tests y corregir el problema antes del próximo deploy." >> $GITHUB_STEP_SUMMARY

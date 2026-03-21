@@ -1,0 +1,57 @@
+# ==============================================================
+# .zap/rules.tsv — Configuración de alertas de OWASP ZAP
+#
+# Formato de cada fila (separado por tabs):
+#   RULE_ID   THRESHOLD
+#
+# Valores de THRESHOLD:
+#   IGNORE  — Suprimir completamente (false positive documentado)
+#   INFO    — Registrar como informativo, no contar como alerta
+#   WARN    — Reportar como advertencia (no falla el scan)
+#   FAIL    — Reportar y fallar el scan
+#
+# POLÍTICA: toda supresión debe tener comentario explicando:
+#   - Por qué se suprime
+#   - Fecha de revisión
+#   - Quién tomó la decisión
+#
+# REVISIÓN TRIMESTRAL: 2026-06-20
+# ==============================================================
+
+# ── Reglas suprimidas — esta app es una API REST JSON ─────────
+
+# 10038 — Content Security Policy (CSP) Header Not Set
+# Razón: API REST JSON — CSP sólo aplica a respuestas HTML.
+#        Configurar CSP a nivel de ingress/gateway en K8s.
+# Fecha: 2026-03-20 | Decisión: NAFELOPEZ
+10038	IGNORE
+
+# 10020 — X-Frame-Options Header Not Set
+# Razón: API REST JSON — X-Frame-Options protege contra clickjacking
+#        en aplicaciones web con UI. No aplica a APIs.
+# Fecha: 2026-03-20 | Decisión: NAFELOPEZ
+10020	IGNORE
+
+# 10021 — X-Content-Type-Options Header Not Set
+# Razón: Configurar a nivel ingress en Kubernetes.
+#        Pendiente: agregar en production ingress annotations.
+# Fecha: 2026-03-20 | Revisión: 2026-06-20
+10021	WARN
+
+# 10035 — Strict-Transport-Security Header Not Set
+# Razón: TLS se termina en el ingress de Kubernetes.
+#        La app en sí sólo maneja HTTP interno (pod-to-pod).
+# Fecha: 2026-03-20 | Decisión: NAFELOPEZ
+10035	IGNORE
+
+# 10036 — Server Leaks Version Information via "Server" HTTP Response Header
+# Razón: Express 4.x incluye header X-Powered-By.
+#        Pendiente: agregar app.disable('x-powered-by') en producción.
+# Fecha: 2026-03-20 | Revisión: 2026-06-20
+10036	WARN
+
+# 10096 — Timestamp Disclosure - Unix
+# Razón: El endpoint /health devuelve timestamp en modo full.
+#        Diseño intencional para diagnóstico.
+# Fecha: 2026-03-20 | Decisión: NAFELOPEZ
+10096	IGNORE

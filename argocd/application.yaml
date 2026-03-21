@@ -3,7 +3,18 @@ kind: Application
 metadata:
   name: demo-app
   namespace: argocd
+  # Finalizer: protege contra borrado accidental.
+  # ArgoCD no elimina la Application hasta que todos los recursos
+  # del destino sean eliminados primero.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
+  # project: demo-app-project → usar un proyecto ArgoCD dedicado
+  # con RBAC propio en lugar del proyecto "default".
+  # Crear el proyecto antes de aplicar este manifiesto:
+  #   kubectl apply -f argocd/project.yaml
+  # NOTA: si no tienes un proyecto creado, cambia a "default"
+  # temporalmente y crea el proyecto después.
   project: default
 
   source:
@@ -12,15 +23,41 @@ spec:
     path: helm/demo-app
     helm:
       valueFiles:
+        # gitops/values.yaml sobreescribe los defaults del chart.
+        # ArgoCD lo resuelve relativo al root del repositorio.
         - ../../gitops/values.yaml
 
   destination:
     server: "https://kubernetes.default.svc"
     namespace: demo-app
 
+  # revisionHistoryLimit: mantener 10 revisiones para rollback.
+  # Sin este valor, ArgoCD mantiene todas las revisiones (crecimiento indefinido).
+  revisionHistoryLimit: 10
+
   syncPolicy:
     automated:
+      # prune: elimina recursos de K8s que ya no están en Git.
+      # Garantiza que Git es la única fuente de verdad.
       prune: true
+      # selfHeal: si alguien modifica un recurso manualmente en K8s,
+      # ArgoCD lo revierte automáticamente al estado de Git.
       selfHeal: true
+      # allowEmpty: false → nunca sincronizar si el resultado
+      # sería un namespace vacío (previene borrados accidentales).
+      allowEmpty: false
     syncOptions:
+      # CreateNamespace: crear el namespace si no existe.
       - CreateNamespace=true
+      # RespectIgnoreDifferences: respetar las reglas de ignoreDifferences.
+      - RespectIgnoreDifferences=true
+      # ApplyOutOfSyncOnly: sólo aplicar los recursos que cambiaron.
+      # Reduce el tiempo de sync y la carga sobre la API de K8s.
+      - ApplyOutOfSyncOnly=true
+    # retry: reintentar sync en caso de error transitorio (ej: CRD no disponible aún).
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

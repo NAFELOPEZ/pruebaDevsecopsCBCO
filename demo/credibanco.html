@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Credibanco — Acepta todos los medios de pago</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal:       #00AFAA;
+      --teal-dark:  #008f8a;
+      --teal-light: #e6f7f7;
+      --navy:       #124734;
+      --navy-mid:   #213D65;
+      --yellow:     #FFC600;
+      --yellow-dk:  #e6b200;
+      --green:      #65BC7B;
+      --bg:         #FFFFFF;
+      --bg-gray:    #F4F6F8;
+      --border:     #E2E6EA;
+      --text:       #1a2e2b;
+      --muted:      #6B7280;
+      --font:       'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 3px; }
+
+    /* ── RIBBON DEMO ── */
+    .demo-ribbon {
+      position: fixed; top: 0; right: 0; z-index: 9999;
+      background: var(--yellow); color: #1a2e2b;
+      font-family: var(--font); font-size: 0.62rem; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.3rem 1.8rem;
+      transform: rotate(45deg) translate(26px, -10px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      background: var(--navy);
+      padding: 0.5rem 2rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1.5rem;
+    }
+    .top-bar a {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.75rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .top-bar a:hover { color: var(--yellow); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: #fff;
+      border-bottom: 3px solid var(--teal);
+      padding: 0 2rem;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 0.625rem;
+      text-decoration: none;
+    }
+    .logo-mark-cb {
+      width: 42px; height: 42px;
+      background: var(--teal);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 900; color: #fff;
+    }
+    .logo-text { font-size: 1.25rem; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
+    .logo-text span { color: var(--teal); }
+
+    .nav-links { display: flex; gap: 0; list-style: none; }
+    .nav-links a {
+      display: block;
+      padding: 0 1.25rem;
+      height: 70px;
+      line-height: 70px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: color 0.2s, border-bottom 0.2s;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -3px;
+    }
+    .nav-links a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    .nav-cta {
+      background: var(--yellow);
+      color: var(--navy);
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .nav-cta:hover { background: var(--yellow-dk); transform: translateY(-1px); }
+
+    @media (max-width: 768px) { .nav-links { display: none; } .top-bar { display: none; } }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(160deg, var(--navy) 0%, #1a4a5e 55%, #0e6b63 100%);
+      color: #fff;
+      padding: 5rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle 600px at 80% 50%, rgba(0,175,170,0.18), transparent),
+        radial-gradient(circle 400px at 10% 80%, rgba(255,198,0,0.08), transparent);
+      pointer-events: none;
+    }
+    /* Patrón de curvas decorativo */
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0; right: 0;
+      height: 80px;
+      background: var(--bg);
+      clip-path: ellipse(55% 100% at 50% 100%);
+    }
+
+    .hero-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; text-align: center; }
+      .hero-visual { display: none; }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(255,198,0,0.15);
+      border: 1px solid rgba(255,198,0,0.35);
+      color: var(--yellow);
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span { color: var(--yellow); }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.75;
+      margin-bottom: 2rem;
+      max-width: 480px;
+    }
+
+    .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+    @media (max-width: 900px) { .hero-btns { justify-content: center; } }
+
+    .btn-yellow {
+      background: var(--yellow);
+      color: var(--navy);
+      padding: 0.875rem 2rem;
+      border-radius: 8px;
+      font-size: 0.95rem; font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 4px 15px rgba(255,198,0,0.3);
+    }
+    .btn-yellow:hover { background: var(--yellow-dk); transform: translateY(-2px); }
+
+    .btn-outline-white {
+      background: transparent;
+      color: #fff;
+      padding: 0.875rem 2rem;
+      border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600;
+      text-decoration: none;
+      border: 2px solid rgba(255,255,255,0.35);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-outline-white:hover { border-color: #fff; background: rgba(255,255,255,0.08); }
+
+    /* Tarjeta de pago visual */
+    .hero-visual { position: relative; }
+    .pay-card {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--navy) 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .pay-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .pay-chip { width: 44px; height: 34px; background: linear-gradient(135deg, var(--yellow), #fff9cc); border-radius: 7px; margin-bottom: 1.5rem; }
+    .pay-number { font-size: 1.05rem; font-weight: 500; letter-spacing: 0.18em; color: rgba(255,255,255,0.9); margin-bottom: 1.5rem; }
+    .pay-meta { display: flex; justify-content: space-between; align-items: flex-end; }
+    .pay-meta-lbl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); margin-bottom: 0.25rem; }
+    .pay-meta-val { font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .pay-brand { font-size: 1.4rem; font-weight: 900; font-style: italic; color: rgba(255,255,255,0.9); }
+
+    .metrics-below {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1rem; margin-top: 1.25rem;
+    }
+    .metric-tile {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .metric-tile .val { font-size: 1.25rem; font-weight: 800; color: var(--yellow); }
+    .metric-tile .lbl { font-size: 0.65rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── SECCIÓN GENÉRICA ── */
+    .section { padding: 5rem 2rem; }
+    .section-gray { background: var(--bg-gray); }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    .sec-eyebrow {
+      display: inline-block;
+      color: var(--teal);
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .sec-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+    .sec-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 3rem;
+    }
+
+    /* ── SOLUCIONES ── */
+    .sol-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    .sol-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .sol-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 35px rgba(0,175,170,0.1);
+      border-color: var(--teal);
+    }
+    .sol-icon {
+      width: 50px; height: 50px;
+      background: var(--teal-light);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1.25rem;
+    }
+    .sol-card h3 { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem; }
+    .sol-card p { font-size: 0.855rem; color: var(--muted); line-height: 1.65; }
+    .sol-link {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      color: var(--teal); font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; margin-top: 1rem;
+      transition: gap 0.2s;
+    }
+    .sol-card:hover .sol-link { gap: 0.55rem; }
+
+    /* ── FRANJA TEAL ── */
+    .teal-band {
+      background: var(--teal);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #fff;
+    }
+    .teal-band h2 { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+    .teal-band p { color: rgba(255,255,255,0.85); margin-bottom: 1.5rem; }
+
+    /* ── CIFRAS ── */
+    .cifras-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .cifra {
+      background: #fff;
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .section-gray .cifra { background: var(--bg-gray); }
+    .cifra-val {
+      font-size: 2.75rem; font-weight: 900; line-height: 1;
+      color: var(--teal);
+      margin-bottom: 0.5rem;
+    }
+    .cifra-lbl { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── CONFIANZA ── */
+    .trust-bar {
+      background: var(--navy);
+      padding: 1.5rem 2rem;
+    }
+    .trust-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; flex-wrap: wrap; gap: 2rem;
+      justify-content: center; align-items: center;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.82rem; font-weight: 500;
+      color: rgba(255,255,255,0.75);
+    }
+    .trust-item .ico { font-size: 1.1rem; }
+
+    /* ── CTA FINAL ── */
+    .cta-final {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a4a5e 100%);
+      color: #fff;
+      text-align: center;
+      padding: 5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-final::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle 500px at 50% 100%, rgba(0,175,170,0.2), transparent);
+    }
+    .cta-final .container { position: relative; z-index: 1; }
+    .cta-final h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.02em; }
+    .cta-final p { color: rgba(255,255,255,0.75); margin-bottom: 2rem; font-size: 1.05rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #0d2e24;
+      color: rgba(255,255,255,0.6);
+      padding: 3rem 2rem 2rem;
+    }
+    .footer-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1rem; text-align: center;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 0.6rem; }
+    .footer-logo-mark {
+      width: 32px; height: 32px; background: var(--teal);
+      border-radius: 7px; display: flex; align-items: center;
+      justify-content: center; font-size: 0.9rem; font-weight: 900; color: #fff;
+    }
+    .footer-logo-text { font-size: 1.05rem; font-weight: 800; color: #fff; }
+    footer p { font-size: 0.78rem; line-height: 1.7; }
+    .footer-demo-note { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem; }
+    .footer-demo-note a { color: var(--teal); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <div class="demo-ribbon">Demo</div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <a href="#">Empresas</a>
+    <a href="#">Personas</a>
+    <a href="#">Inversionistas</a>
+    <a href="#">Contáctenos</a>
+  </div>
+
+  <!-- Nav -->
+  <nav>
+    <a href="index.html" class="nav-logo">
+      <div class="logo-mark-cb">C</div>
+      <span class="logo-text">Credi<span>banco</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#soluciones">Soluciones</a></li>
+      <li><a href="#seguridad">Seguridad</a></li>
+      <li><a href="#cifras">Nosotros</a></li>
+    </ul>
+    <a href="#contacto" class="nav-cta">Comienza ahora</a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-eyebrow">🔒 Plataforma certificada PCI-DSS Nivel 1</div>
+        <h1>Acepta todos los medios de pago y <span>eleva tu negocio</span></h1>
+        <p>
+          Conectamos a comercios, bancos y personas con la infraestructura
+          de pagos más segura y eficiente de Colombia. ¡Seguimos innovando!
+        </p>
+        <div class="hero-btns">
+          <a href="#soluciones" class="btn-yellow">Conoce más</a>
+          <a href="#contacto" class="btn-outline-white">Habla con un asesor</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="pay-card">
+          <div class="pay-chip"></div>
+          <div class="pay-number">•••• •••• •••• 4892</div>
+          <div class="pay-meta">
+            <div>
+              <div class="pay-meta-lbl">Titular</div>
+              <div class="pay-meta-val">EMPRESA S.A.S.</div>
+            </div>
+            <div>
+              <div class="pay-meta-lbl">Vence</div>
+              <div class="pay-meta-val">09/28</div>
+            </div>
+            <div class="pay-brand">VISA</div>
+          </div>
+        </div>
+        <div class="metrics-below">
+          <div class="metric-tile">
+            <div class="val">99.99%</div>
+            <div class="lbl">Uptime</div>
+          </div>
+          <div class="metric-tile">
+            <div class="val">&lt;200ms</div>
+            <div class="lbl">Latencia</div>
+          </div>
+          <div class="metric-tile">
+            <div class="val">256-bit</div>
+            <div class="lbl">Cifrado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust bar -->
+  <div class="trust-bar">
+    <div class="trust-inner">
+      <div class="trust-item"><span class="ico">🏛️</span> Supervisado por la Superfinanciera</div>
+      <div class="trust-item"><span class="ico">🔐</span> PCI-DSS Nivel 1</div>
+      <div class="trust-item"><span class="ico">🌐</span> ISO 27001</div>
+      <div class="trust-item"><span class="ico">📋</span> Ley 1581 de 2012</div>
+      <div class="trust-item"><span class="ico">⚡</span> Tiempo real 24/7</div>
+    </div>
+  </div>
+
+  <!-- Soluciones -->
+  <section id="soluciones" class="section">
+    <div class="container">
+      <div class="sec-eyebrow">Portafolio de Soluciones</div>
+      <h2 class="sec-title">Un ecosistema completo<br />de pagos digitales</h2>
+      <p class="sec-sub">
+        Desde la adquirencia hasta la liquidación, cubrimos cada etapa
+        del flujo transaccional con tecnología de última generación.
+      </p>
+      <div class="sol-grid">
+        <div class="sol-card">
+          <div class="sol-icon">💳</div>
+          <h3>Adquirencia Digital</h3>
+          <p>Acepta tarjetas débito, crédito y prepago en POS, ecommerce y app móvil con la más alta disponibilidad.</p>
+          <a href="#" class="sol-link">Conoce más →</a>
+        </div>
+        <div class="sol-card">
+          <div class="sol-icon">🔗</div>
+          <h3>API de Pagos</h3>
+          <p>Integración REST/JSON de alto rendimiento. SDKs disponibles. Ambiente sandbox para pruebas sin costo.</p>
+          <a href="#" class="sol-link">Ver documentación →</a>
+        </div>
+        <div class="sol-card">
+          <div class="sol-icon">📱</div>
+          <h3>Pagos QR y Contactless</h3>
+          <p>Tokenización de pagos sin contacto compatible con billeteras digitales y dispositivos NFC.</p>
+          <a href="#" class="sol-link">Conoce más →</a>
+        </div>
+        <div class="sol-card">
+          <div class="sol-icon">🏢</div>
+          <h3>Soluciones B2B</h3>
+          <p>Pagos masivos, nómina y proveedores. Reconciliación automática y reportes en tiempo real.</p>
+          <a href="#" class="sol-link">Conoce más →</a>
+        </div>
+        <div class="sol-card">
+          <div class="sol-icon">🤖</div>
+          <h3>Antifraude con IA</h3>
+          <p>Modelos de machine learning entrenados con millones de transacciones para detección en milisegundos.</p>
+          <a href="#" class="sol-link">Conoce más →</a>
+        </div>
+        <div class="sol-card">
+          <div class="sol-icon">📊</div>
+          <h3>Analytics y Reportes</h3>
+          <p>Dashboard en tiempo real, exportación de datos e inteligencia de negocio transaccional.</p>
+          <a href="#" class="sol-link">Ver demo →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Franja teal -->
+  <div class="teal-band">
+    <div class="container" style="max-width:700px;margin:0 auto">
+      <h2>¿Tu negocio listo para el siguiente nivel?</h2>
+      <p>Únete a más de 180 entidades financieras que confían en Credibanco para procesar sus pagos diariamente.</p>
+      <a href="#contacto" class="btn-yellow">Comienza ahora</a>
+    </div>
+  </div>
+
+  <!-- Cifras -->
+  <section id="cifras" class="section section-gray">
+    <div class="container">
+      <div style="text-align:center;margin-bottom:3rem">
+        <div class="sec-eyebrow">Credibanco en Cifras</div>
+        <h2 class="sec-title" style="margin:0 auto">La confianza que nos respalda</h2>
+      </div>
+      <div class="cifras-grid">
+        <div class="cifra">
+          <div class="cifra-val">+2M</div>
+          <div class="cifra-lbl">Transacciones diarias</div>
+        </div>
+        <div class="cifra">
+          <div class="cifra-val">99.99%</div>
+          <div class="cifra-lbl">Disponibilidad anual</div>
+        </div>
+        <div class="cifra">
+          <div class="cifra-val">+180</div>
+          <div class="cifra-lbl">Entidades financieras</div>
+        </div>
+        <div class="cifra">
+          <div class="cifra-val">0.003%</div>
+          <div class="cifra-lbl">Tasa de fraude</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section id="contacto" class="cta-final">
+    <div class="container">
+      <h2>¿Listo para transformar<br />la experiencia de pago?</h2>
+      <p>Nuestros asesores te guían en la solución ideal para tu negocio.</p>
+      <a href="mailto:soluciones@credibanco.com" class="btn-yellow">Hablar con un asesor →</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <div class="footer-logo-mark">C</div>
+        <span class="footer-logo-text">Credibanco</span>
+      </div>
+      <p>© 2026 Credibanco S.A. · Bogotá, Colombia · NIT 860.002.464-3</p>
+      <p class="footer-demo-note">
+        ⚠️ Esta es una demo no productiva para presentaciones internas.
+        <a href="index.html">← Volver al portal</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>

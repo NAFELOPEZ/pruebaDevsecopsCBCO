@@ -1,0 +1,64 @@
+# ==============================================================
+# .gitleaks.toml — Configuración de GitLeaks para detección
+#                  de secretos en el repositorio
+#
+# GitLeaks escanea el historial de commits buscando patrones
+# de secretos: tokens, claves API, contraseñas hardcodeadas,
+# claves privadas, etc.
+#
+# Documentación: https://github.com/gitleaks/gitleaks
+# Versión compatible: gitleaks >= 8.x
+# ==============================================================
+
+title = "pruebaDevsecopsCBCO — GitLeaks config"
+
+# ── Extender el ruleset por defecto ───────────────────────────
+# Usar las reglas incluidas en gitleaks + reglas personalizadas
+[extend]
+useDefault = true
+
+# ── Reglas personalizadas para este proyecto ──────────────────
+[[rules]]
+id          = "dockerhub-token"
+description = "DockerHub token o contraseña expuesta"
+regex       = '''(?i)(dockerhub|docker_hub|docker_token|dockerhub_token)[\"'\s:=]+[a-z0-9]{8,}'''
+tags        = ["docker", "secret"]
+
+[[rules]]
+id          = "argocd-token"
+description = "ArgoCD API token expuesto"
+regex       = '''(?i)(argocd[_-]?token|argocd[_-]?password)[\"'\s:=]+[^\s\"']{8,}'''
+tags        = ["argocd", "secret"]
+
+[[rules]]
+id          = "semgrep-token"
+description = "Semgrep app token expuesto"
+regex       = '''(?i)(semgrep[_-]?token|semgrep[_-]?app[_-]?token)[\"'\s:=]+[a-z0-9\-]{8,}'''
+tags        = ["semgrep", "secret"]
+
+# ── Allowlist global — rutas excluidas del escaneo ────────────
+[allowlist]
+description = "Archivos y rutas excluidos del escaneo"
+
+# Excluir node_modules — contienen hashes y strings que generan
+# falsos positivos masivos (miles de archivos)
+paths = [
+  "app/node_modules",
+  "node_modules",
+  # Archivos de configuración que documentan CVEs (no secretos)
+  ".trivyignore",
+  # Archivos de test de ejemplo que usan valores dummy
+  "app/test",
+]
+
+# Excluir commits de actualización automática de GitOps
+# (contienen hashes de imagen que pueden parecer tokens)
+commits = []
+
+# Excluir patrones que son conocidos falsos positivos
+regexes = [
+  # Hashes SHA de Docker/Git (40 chars hex) — no son secretos
+  '''[0-9a-f]{40}''',
+  # SHA-short de imagen Docker (12 chars hex)
+  '''tag: "[0-9a-f]{12}"''',
+]

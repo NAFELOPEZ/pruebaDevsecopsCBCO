@@ -1,0 +1,33 @@
+# ==============================================================
+# .trivyignore — CVEs aceptados con justificación documentada
+#
+# FORMATO:
+#   CVE-XXXX-XXXXX  # Descripción | Razón | Fecha | Revisión
+#
+# POLÍTICA:
+#   - Toda entrada debe tener comentario con razón y fecha
+#   - Revisar trimestralmente — próxima revisión: 2026-06-20
+#   - Una CVE se remueve de este archivo cuando el fix esté
+#     disponible en node:20-alpine o en la dependencia afectada
+#   - NO suprimir CVEs de severidad CRITICAL sin aprobación del
+#     equipo de seguridad
+#
+# Para ver CVEs activos sin fix disponible:
+#   trivy image --ignore-unfixed node:20-alpine
+#
+# REVISIÓN TRIMESTRAL: 2026-06-20
+# Responsable: @NAFELOPEZ
+# ==============================================================
+
+# Actualmente vacío — todas las CVEs HIGH/CRITICAL de
+# node:20-alpine tienen fix disponible o se usan los flags
+# --ignore-unfixed en el pipeline para excluirlas
+# automáticamente.
+#
+# Si en el futuro se requiere suprimir una CVE específica,
+# agregarla aquí con su justificación:
+#
+# CVE-XXXX-XXXXX  # Paquete X — Sin fix disponible hasta vX.Y.Z
+#                 # Razón: afecta sólo a entornos dev, no producción
+#                 # Fecha aceptación: YYYY-MM-DD
+#                 # Próxima revisión: YYYY-MM-DD
