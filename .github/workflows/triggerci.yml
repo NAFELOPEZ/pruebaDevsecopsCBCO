@@ -192,13 +192,12 @@ jobs:
       - name: Install Trivy ${{ env.TRIVY_VERSION }}
         run: |
           TRIVY_VER="${{ env.TRIVY_VERSION }}"
-          for attempt in 1 2 3; do
-            echo "Attempt ${attempt}: installing Trivy ${TRIVY_VER}..."
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-              | sh -s -- -b /usr/local/bin "${TRIVY_VER}" && break
-            echo "Attempt ${attempt} failed, retrying in 5s..."
-            sleep 5
-          done
+          TRIVY_VER_NUM="${TRIVY_VER#v}"
+          echo "Installing Trivy ${TRIVY_VER_NUM}..."
+          wget -q "https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VER}/trivy_${TRIVY_VER_NUM}_Linux-64bit.deb" \
+            -O /tmp/trivy.deb
+          sudo dpkg -i /tmp/trivy.deb
+          rm /tmp/trivy.deb
           trivy --version
 
       # Paso 1: generar SARIF (para GitHub Code Scanning — no bloquea)
@@ -344,13 +343,12 @@ jobs:
       - name: Install Trivy ${{ env.TRIVY_VERSION }}
         run: |
           TRIVY_VER="${{ env.TRIVY_VERSION }}"
-          for attempt in 1 2 3; do
-            echo "Attempt ${attempt}: installing Trivy ${TRIVY_VER}..."
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-              | sh -s -- -b /usr/local/bin "${TRIVY_VER}" && break
-            echo "Attempt ${attempt} failed, retrying in 5s..."
-            sleep 5
-          done
+          TRIVY_VER_NUM="${TRIVY_VER#v}"
+          echo "Installing Trivy ${TRIVY_VER_NUM}..."
+          wget -q "https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VER}/trivy_${TRIVY_VER_NUM}_Linux-64bit.deb" \
+            -O /tmp/trivy.deb
+          sudo dpkg -i /tmp/trivy.deb
+          rm /tmp/trivy.deb
           trivy --version
 
       # Paso 1: SARIF para Code Scanning (no bloquea)
