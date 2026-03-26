@@ -239,3 +239,4 @@ Abrir directamente en el navegador (doble clic). No requieren instalación.
 ## Licencia
 
 Proyecto de prueba técnica — uso interno CBCO.
+
