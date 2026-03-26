@@ -191,8 +191,14 @@ jobs:
       # Script: https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
       - name: Install Trivy ${{ env.TRIVY_VERSION }}
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sh -s -- -b /usr/local/bin ${{ env.TRIVY_VERSION }}
+          TRIVY_VER="${{ env.TRIVY_VERSION }}"
+          for attempt in 1 2 3; do
+            echo "Attempt ${attempt}: installing Trivy ${TRIVY_VER}..."
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+              | sh -s -- -b /usr/local/bin "${TRIVY_VER}" && break
+            echo "Attempt ${attempt} failed, retrying in 5s..."
+            sleep 5
+          done
           trivy --version
 
       # Paso 1: generar SARIF (para GitHub Code Scanning — no bloquea)
@@ -337,8 +343,14 @@ jobs:
       # ── Trivy: scan de imagen ──────────────────────────────
       - name: Install Trivy ${{ env.TRIVY_VERSION }}
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sh -s -- -b /usr/local/bin ${{ env.TRIVY_VERSION }}
+          TRIVY_VER="${{ env.TRIVY_VERSION }}"
+          for attempt in 1 2 3; do
+            echo "Attempt ${attempt}: installing Trivy ${TRIVY_VER}..."
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+              | sh -s -- -b /usr/local/bin "${TRIVY_VER}" && break
+            echo "Attempt ${attempt} failed, retrying in 5s..."
+            sleep 5
+          done
           trivy --version
 
       # Paso 1: SARIF para Code Scanning (no bloquea)
