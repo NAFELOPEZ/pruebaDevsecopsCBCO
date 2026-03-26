@@ -107,7 +107,7 @@ jobs:
     steps:
       # ── Checkout ──────────────────────────────────────────
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0   # Historial completo para GitLeaks y Semgrep diff
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -122,7 +122,7 @@ jobs:
 
       # ── Node.js + dependencias ─────────────────────────────
       - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.3.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -138,7 +138,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: coverage-report-${{ steps.vars.outputs.image_tag }}
@@ -220,7 +220,7 @@ jobs:
             .
 
       - name: Upload Trivy FS SARIF a GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v3.28.15
         if: always()
         with:
           sarif_file: trivy-fs.sarif
@@ -237,7 +237,7 @@ jobs:
             ./app
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: sbom-${{ steps.vars.outputs.image_tag }}
           path: sbom-${{ steps.vars.outputs.image_tag }}.spdx.json
@@ -278,7 +278,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -294,16 +294,16 @@ jobs:
       # ── Docker setup ───────────────────────────────────────
       # QEMU: soporte de multi-arquitectura (arm64, amd64)
       - name: Set up QEMU (multi-arch)
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3.6.0
 
       # Buildx: builder avanzado con cache y multi-platform
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3.10.0
 
       # Login sólo en push a main (no en PRs)
       - name: Login to DockerHub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v3.4.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -317,7 +317,7 @@ jobs:
       # En main: push=true (va al registry), load=true (para DAST)
       - name: Build Docker image
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v6.15.0
         with:
           context: .
           # En main: push=true y también load=true para DAST
@@ -364,7 +364,7 @@ jobs:
             ${{ steps.vars.outputs.full_image }}
 
       - name: Upload Trivy image SARIF a GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v3.28.15
         if: always()
         with:
           sarif_file: trivy-image.sarif
@@ -423,7 +423,7 @@ jobs:
 
       - name: Upload container DAST logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: dast-logs-${{ steps.vars.outputs.image_tag }}
           path: container-dast-logs.txt
@@ -465,7 +465,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -510,7 +510,7 @@ jobs:
       # cuando todos los checks requeridos pasen.
       - name: Create GitOps PR (auto-merge)
         id: create-pr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7.0.8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "ci: update image tag to ${{ needs.ci.outputs.image_tag }}"

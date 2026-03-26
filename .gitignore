@@ -6,3 +6,5 @@ coverage/
 report_*.*
 zap_report*.*
 .claude/
+kubectl
+minikube-linux-amd64

@@ -61,7 +61,7 @@ jobs:
     steps:
       # ── Checkout para leer gitops/values.yaml ─────────────
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -144,6 +144,7 @@ jobs:
             --server "${ARGOCD_SERVER}" \
             --auth-token "${ARGOCD_AUTH_TOKEN}" \
             --insecure \
+            --grpc-web \
             --health \
             --sync \
             --timeout 300
@@ -152,7 +153,8 @@ jobs:
           argocd app get ${{ env.APP_NAME }} \
             --server "${ARGOCD_SERVER}" \
             --auth-token "${ARGOCD_AUTH_TOKEN}" \
-            --insecure
+            --insecure \
+            --grpc-web
 
       # ── Smoke Tests post-deploy ────────────────────────────
       # Verifican que la app responde correctamente en K8s
@@ -328,13 +330,15 @@ jobs:
           argocd app rollback ${{ env.APP_NAME }} \
             --server "${ARGOCD_SERVER}" \
             --auth-token "${ARGOCD_AUTH_TOKEN}" \
-            --insecure
+            --insecure \
+            --grpc-web
 
           echo "Esperando que el rollback complete..."
           argocd app wait ${{ env.APP_NAME }} \
             --server "${ARGOCD_SERVER}" \
             --auth-token "${ARGOCD_AUTH_TOKEN}" \
             --insecure \
+            --grpc-web \
             --health \
             --timeout 180
 
@@ -342,7 +346,8 @@ jobs:
           argocd app get ${{ env.APP_NAME }} \
             --server "${ARGOCD_SERVER}" \
             --auth-token "${ARGOCD_AUTH_TOKEN}" \
-            --insecure
+            --insecure \
+            --grpc-web
 
       # Marcar el GitHub Deployment como 'inactive' tras rollback
       - name: Update GitHub Deployment Status → inactive (rollback)
