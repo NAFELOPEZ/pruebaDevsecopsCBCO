@@ -164,10 +164,10 @@ jobs:
       # GitLeaks escanea todo el historial de commits.
       # Si encuentra un secreto → exit 1 → pipeline FALLA.
       # NO usar continue-on-error aquí: los secretos son bloqueantes.
+      # gitleaks-action@v2 auto-detecta .gitleaks.toml del root del repo.
+      # NO acepta input 'config-path' — ese input era de v1.
       - name: GitLeaks — secret scanning
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config-path: .gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -507,15 +507,16 @@ jobs:
 
       # Crear GitHub Deployment — visible en la pestaña "Deployments"
       # del repositorio. Permite rastrear qué versión está en qué ambiente.
+      #
+      # NOTA: Usamos archivo temporal para el body JSON en lugar de heredoc.
+      # Un heredoc con pipe (<<EOF ... EOF | jq) dentro de $() causa
+      # "syntax error near unexpected token '|'" en bash de GitHub runners.
       - name: Create GitHub Deployment
         id: gh-deployment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            --input - <<'PAYLOAD'
+          cat > /tmp/deploy-payload.json <<'EOF'
           {
             "ref": "${{ github.sha }}",
             "environment": "production",
@@ -523,9 +524,15 @@ jobs:
             "required_contexts": [],
             "auto_merge": false
           }
-          PAYLOAD
-          | jq -r '.id')
+          EOF
 
+          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            --input /tmp/deploy-payload.json \
+            --jq '.id')
+
+          rm -f /tmp/deploy-payload.json
           echo "deployment_id=${DEPLOYMENT_ID}" >> "$GITHUB_OUTPUT"
           echo "GitHub Deployment ID: ${DEPLOYMENT_ID}"
 

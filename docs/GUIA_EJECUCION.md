@@ -739,6 +739,37 @@ if: always() && needs.ci.result == 'success'
 ```
 `always()` le dice a GitHub Actions que evalúe la condición en vez de aplicar la lógica de skip automático por cadena.
 
+#### GitOps falla: `syntax error near unexpected token '|'`
+**Síntoma**: El job GitOps — Update image tag falla en "Create GitHub Deployment" con exit code 2.
+**Causa**: Bash en los runners de GitHub Actions no soporta correctamente un heredoc con pipe (`<<PAYLOAD ... PAYLOAD | jq`) dentro de una sustitución de comando `$(...)`. La combinación `$(command <<EOF ... EOF | filter)` causa un error de parsing.
+**Fix**: Escribir el JSON en un archivo temporal en vez de usar heredoc con pipe:
+```yaml
+cat > /tmp/deploy-payload.json <<'EOF'
+{ "ref": "...", "environment": "production" }
+EOF
+
+DEPLOYMENT_ID=$(gh api repos/.../deployments \
+  --method POST \
+  --input /tmp/deploy-payload.json \
+  --jq '.id')
+rm -f /tmp/deploy-payload.json
+```
+
+#### GitLeaks warning: `Unexpected input(s) 'config-path'`
+**Síntoma**: Warning amarillo en CI: `Unexpected input(s) 'config-path', valid inputs are ['']`.
+**Causa**: `gitleaks-action@v2` no acepta el input `config-path` — era de v1. La v2 auto-detecta `.gitleaks.toml` del root del repositorio.
+**Fix**: Remover el bloque `with:` del step de GitLeaks:
+```yaml
+# ANTES (v1 syntax):
+uses: gitleaks/gitleaks-action@v2
+with:
+  config-path: .gitleaks.toml
+
+# DESPUÉS (v2 correcto):
+uses: gitleaks/gitleaks-action@v2
+# Auto-detecta .gitleaks.toml del root
+```
+
 #### GitOps PR no se crea
 **Causa**: Permisos insuficientes en GitHub Actions.
 **Fix**: Settings → Actions → General → Workflow permissions → **Read and write permissions** + ✅ Allow GitHub Actions to create pull requests.
