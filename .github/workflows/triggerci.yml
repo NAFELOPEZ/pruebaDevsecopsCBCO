@@ -2,13 +2,16 @@
 # triggerci.yml — Pipeline de CI + Build + Push + GitOps
 #
 # FLUJO COMPLETO:
-#   validate-pr-approval  (sólo en eventos de PR review)
-#         ↓
 #       ci  (tests, lint, SAST, SCA, SBOM, secret-scan)
 #         ↓
 #   build-push  (Docker build único, Trivy, DAST ZAP, push registry)
 #         ↓
 #   update-gitops  (actualiza gitops/values.yaml, crea PR GitOps)
+#
+# TRIGGERS:
+#   push a main: CI completo → build+push → GitOps PR
+#   pull_request a main: CI → build (sin push) → sin GitOps
+#   (la aprobación de PRs se controla via branch protection rules)
 #
 # La fase CD (verify + rollback) vive en cd-verify.yml y se
 # dispara cuando el PR de GitOps hace merge a main.
@@ -45,8 +48,9 @@ on:
     paths-ignore:
       - 'gitops/**'
       - '**.md'
-  pull_request_review:
-    types: [submitted]
+  # NOTA: pull_request_review fue removido porque gitleaks-action@v2
+  # no soporta ese evento ("The [pull_request_review] event is not yet supported").
+  # La aprobación de PRs se controla via branch protection rules en Settings.
 
 # Denegar TODOS los permisos por defecto.
 # Cada job declara explícitamente sólo lo que necesita.
@@ -65,48 +69,14 @@ env:
   ARGOCD_CLI_VERSION: "v2.13.3"
 
 # ==============================================================
-# JOB 0: Validar que el PR fue aprobado
-# Sólo corre en eventos pull_request_review
-# ==============================================================
-jobs:
-  validate-pr-approval:
-    name: Validate PR Approval
-    if: github.event_name == 'pull_request_review'
-    runs-on: ubuntu-latest
-    # Este job no necesita ningún permiso
-    permissions: {}
-    steps:
-      - name: Verify PR review is approved
-        run: |
-          echo "Review state: ${{ github.event.review.state }}"
-          if [ "${{ github.event.review.state }}" != "approved" ]; then
-            echo "❌ Este workflow sólo procede con review en estado 'approved'."
-            exit 1
-          fi
-          echo "✅ PR aprobado — continuando pipeline"
-
-# ==============================================================
 # JOB 1: CI — Tests, Lint, SAST, SCA, SBOM, Secret scan
 # ==============================================================
+jobs:
   ci:
     name: CI — Tests + Security Scanning
     runs-on: ubuntu-latest
-    needs: [validate-pr-approval]
-    # always(): corre aunque validate-pr-approval fue skipped (en push directo o PR)
-    # La condición permite:
-    #   - push a main: CI completo + build + gitops
-    #   - pull_request: CI + build (sin push a registry ni gitops)
-    #   - pull_request_review aprobado: misma lógica que pull_request
-    if: |
-      always() && (
-        github.event_name == 'push' ||
-        github.event_name == 'pull_request' ||
-        (
-          github.event_name == 'pull_request_review' &&
-          github.event.review.state == 'approved' &&
-          needs.validate-pr-approval.result == 'success'
-        )
-      )
+    # Corre en push a main y pull_request a main.
+    # La aprobación de PRs se controla via branch protection rules.
     permissions:
       contents: read          # Checkout del código
       security-events: write  # Subir SARIF a GitHub Code Scanning
@@ -281,10 +251,7 @@ jobs:
     name: Build + DAST + Push
     runs-on: ubuntu-latest
     needs: [ci]
-    # always(): necesario para que GitHub Actions evalúe la condición
-    # en lugar de propagar el skip de validate-pr-approval por la cadena.
-    # Sin always(), el job se salta aunque ci haya pasado correctamente.
-    if: always() && needs.ci.result == 'success'
+    if: needs.ci.result == 'success'
     permissions:
       contents: read
       packages: write         # Para push a GHCR si se migra allá
@@ -485,9 +452,7 @@ jobs:
     name: GitOps — Update image tag
     runs-on: ubuntu-latest
     needs: [ci, build-push]
-    # always(): misma razón que build-push — evitar propagación de skip
     if: |
-      always() &&
       needs.build-push.result == 'success' &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main'

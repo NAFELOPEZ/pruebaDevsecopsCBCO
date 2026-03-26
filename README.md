@@ -109,7 +109,7 @@ pruebaDevsecopsCBCO/
 
 ### CI — `triggerci.yml`
 
-> Se dispara en: `push` a main, `pull_request` a main, `pull_request_review` aprobado.
+> Se dispara en: `push` a main, `pull_request` a main.
 
 | Job | Fase | Herramientas | Bloquea |
 |-----|------|-------------|---------|
@@ -167,7 +167,7 @@ pruebaDevsecopsCBCO/
 - SBOM + provenance de imagen (supply chain security)
 - GitLeaks bloquea siempre (no exceptions en pipeline)
 - CI obligatorio en PRs (pull_request trigger)
-- Code review obligatorio (validate-pr-approval)
+- Code review obligatorio (branch protection rules)
 
 ---
 

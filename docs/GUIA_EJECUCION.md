@@ -755,6 +755,11 @@ DEPLOYMENT_ID=$(gh api repos/.../deployments \
 rm -f /tmp/deploy-payload.json
 ```
 
+#### GitLeaks error: `The [pull_request_review] event is not yet supported`
+**Síntoma**: CI falla en el step de GitLeaks con `ERROR: The [pull_request_review] event is not yet supported`. Todos los steps posteriores (Trivy, SBOM) se saltan y `trivy-fs.sarif` no se genera.
+**Causa**: `gitleaks-action@v2` solo soporta eventos `push` y `pull_request`. El trigger `pull_request_review` causa un error fatal.
+**Fix**: Remover el trigger `pull_request_review` de `triggerci.yml` y el job `validate-pr-approval`. La aprobación de PRs se controla via branch protection rules en Settings → Branches → Add rule → Require approvals.
+
 #### GitLeaks warning: `Unexpected input(s) 'config-path'`
 **Síntoma**: Warning amarillo en CI: `Unexpected input(s) 'config-path', valid inputs are ['']`.
 **Causa**: `gitleaks-action@v2` no acepta el input `config-path` — era de v1. La v2 auto-detecta `.gitleaks.toml` del root del repositorio.
