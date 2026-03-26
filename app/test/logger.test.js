@@ -1,7 +1,13 @@
 describe("Logger (dev mode, level=trace)", () => {
   let logger, stdoutSpy, stderrSpy;
+  let savedAppName, savedVersion;
 
   beforeAll(() => {
+    // Save and clear env to ensure fallback branches are covered
+    savedAppName = process.env.APP_NAME;
+    savedVersion = process.env.npm_package_version;
+    delete process.env.APP_NAME;
+    delete process.env.npm_package_version;
     process.env.LOG_LEVEL = "trace";
     delete process.env.NODE_ENV;
     jest.isolateModules(() => {
@@ -11,6 +17,8 @@ describe("Logger (dev mode, level=trace)", () => {
 
   afterAll(() => {
     delete process.env.LOG_LEVEL;
+    if (savedAppName !== undefined) process.env.APP_NAME = savedAppName;
+    if (savedVersion !== undefined) process.env.npm_package_version = savedVersion;
   });
 
   beforeEach(() => {
@@ -220,12 +228,46 @@ describe("Logger (invalid LOG_LEVEL)", () => {
 
   it("falls back to info level", () => {
     const stdoutSpy = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
-    // debug should be filtered (below info)
     logger.debug("should not appear");
     expect(stdoutSpy).not.toHaveBeenCalled();
-    // info should work
     logger.info("should appear");
     expect(stdoutSpy).toHaveBeenCalledTimes(1);
     stdoutSpy.mockRestore();
+  });
+});
+
+describe("Logger (custom APP_NAME and npm_package_version)", () => {
+  let logger, stdoutSpy;
+
+  beforeAll(() => {
+    process.env.NODE_ENV = "production";
+    process.env.LOG_LEVEL = "info";
+    process.env.APP_NAME = "custom-service";
+    process.env.npm_package_version = "2.5.0";
+    jest.isolateModules(() => {
+      logger = require("../src/logger");
+    });
+  });
+
+  afterAll(() => {
+    delete process.env.NODE_ENV;
+    delete process.env.LOG_LEVEL;
+    delete process.env.APP_NAME;
+    delete process.env.npm_package_version;
+  });
+
+  beforeEach(() => {
+    stdoutSpy = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    stdoutSpy.mockRestore();
+  });
+
+  it("uses custom APP_NAME in JSON output", () => {
+    logger.info("custom svc");
+    const parsed = JSON.parse(stdoutSpy.mock.calls[0][0]);
+    expect(parsed.service).toBe("custom-service");
+    expect(parsed.version).toBe("2.5.0");
   });
 });
