@@ -701,6 +701,44 @@ npm audit fix
 ```
 Si es de la imagen base, actualizar `node:20-alpine` en `Dockerfile` a la última versión.
 
+#### Trivy v0.56.1 no se puede instalar (versión eliminada)
+**Síntoma**: `wget: server returned error: HTTP/404` o script de instalación silenciosamente falla.
+**Causa**: Las versiones v0.27–v0.68 de Trivy fueron eliminadas de GitHub Releases como respuesta a un incidente de supply chain en trivy-action (marzo 2026).
+**Fix**: Usar v0.69.3 o superior con instalación directa por `.deb`:
+```yaml
+wget -q "https://github.com/aquasecurity/trivy/releases/download/v0.69.3/trivy_0.69.3_Linux-64bit.deb" -O /tmp/trivy.deb
+sudo dpkg -i /tmp/trivy.deb
+```
+**Referencia**: https://github.com/aquasecurity/trivy/releases
+
+#### Build falla: `docker exporter does not currently support exporting manifest lists`
+**Síntoma**: El job Build + DAST + Push falla en el step "Build Docker image" con error de manifest list.
+**Causa**: Las opciones `push: true` + `load: true` + `provenance: true` son incompatibles. Provenance/SBOM generan un manifest list (OCI index) y el docker exporter (`--load`) no puede importar manifest lists.
+**Fix**: Separar push y load:
+- En push a main: `push: true`, `load: false`, `provenance: true`, `sbom: true` → luego `docker pull`
+- En PRs: `push: false`, `load: true`, `provenance: false`, `sbom: false`
+
+```yaml
+push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+load: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+provenance: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+sbom: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+```
+Después del push, agregar step para hacer `docker pull` de la imagen para DAST.
+
+#### Jobs Build y GitOps se saltan aunque CI pasó (skipped)
+**Síntoma**: CI muestra check verde ✅ pero Build + DAST + Push aparece como ⊘ Skipped.
+**Causa**: GitHub Actions propaga el estado "skipped" por la cadena de dependencias. Si `validate-pr-approval` fue skipped (porque no es un evento `pull_request_review`), los jobs downstream se saltan automáticamente, **incluso si su dependencia directa (`ci`) pasó correctamente**.
+**Fix**: Agregar `always()` a la condición `if` de los jobs downstream:
+```yaml
+# ANTES (no funciona):
+if: needs.ci.result == 'success'
+
+# DESPUÉS (funciona):
+if: always() && needs.ci.result == 'success'
+```
+`always()` le dice a GitHub Actions que evalúe la condición en vez de aplicar la lógica de skip automático por cadena.
+
 #### GitOps PR no se crea
 **Causa**: Permisos insuficientes en GitHub Actions.
 **Fix**: Settings → Actions → General → Workflow permissions → **Read and write permissions** + ✅ Allow GitHub Actions to create pull requests.
@@ -745,7 +783,7 @@ kubectl set env deployment/demo-app LOG_LEVEL=debug -n demo-app
 
 | Herramienta | Dónde actualizar | Frecuencia |
 |------------|------------------|-----------|
-| Trivy | `TRIVY_VERSION` en `triggerci.yml` | Mensual |
+| Trivy | `TRIVY_VERSION` en `triggerci.yml` (actual: v0.69.3) | Mensual |
 | ArgoCD CLI | `ARGOCD_CLI_VERSION` en ambos workflows | Trimestral |
 | Docker base | `FROM node:20-alpine` en `Dockerfile` | Mensual |
 | GitHub Actions | Versiones de `uses:` en workflows | Al recibir deprecation warnings |

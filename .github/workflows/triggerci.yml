@@ -331,26 +331,37 @@ jobs:
       # La imagen que se testea con DAST ES la misma que se
       # deploya. El digest SHA256 es su identidad criptográfica.
       #
-      # En PRs: push=false, load=true (disponible localmente)
-      # En main: push=true (va al registry), load=true (para DAST)
+      # IMPORTANTE: push + load + provenance NO pueden usarse juntos.
+      # Provenance/SBOM crean un manifest list (OCI index) que el
+      # docker exporter (--load) no puede importar.
+      #
+      # Estrategia:
+      #   main:  push=true  + load=false + provenance + SBOM
+      #          → luego docker pull para DAST
+      #   PR:    push=false + load=true  + sin provenance
+      #          → imagen disponible localmente para DAST
       - name: Build Docker image
         id: build
         uses: docker/build-push-action@v6.15.0
         with:
           context: .
-          # En main: push=true y también load=true para DAST
-          # En PR: push=false, load=true
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          load: true
+          load: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
           # SÓLO tag SHA — nunca :latest en el registry
           # :latest es un tag mutable que no garantiza reproducibilidad
           tags: ${{ steps.vars.outputs.full_image }}
           # Cache: reutilizar layers entre runs del mismo branch
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Provenance y SBOM de imagen (supply chain security)
-          provenance: true
-          sbom: true
+          # Provenance y SBOM: sólo en push (incompatible con --load)
+          provenance: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          sbom: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      # En main: la imagen fue pushed al registry pero no cargada localmente.
+      # Hacer docker pull para tenerla disponible para Trivy image scan y DAST.
+      - name: Pull image for local scanning and DAST
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker pull ${{ steps.vars.outputs.full_image }}
 
       # ── Trivy: scan de imagen ──────────────────────────────
       - name: Install Trivy ${{ env.TRIVY_VERSION }}

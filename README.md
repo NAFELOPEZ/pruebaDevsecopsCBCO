@@ -64,7 +64,7 @@ Implementación end-to-end de un pipeline **DevSecOps** que integra **10+ herram
 | **GitOps** | ArgoCD | v2.13.3 |
 | **Cluster** | Kubernetes | 1.27 – 1.31 |
 | **SAST** | Semgrep OSS | v1 |
-| **SCA** | npm audit + Trivy | v0.56.1 |
+| **SCA** | npm audit + Trivy | v0.69.3 |
 | **DAST** | OWASP ZAP Baseline | v0.12.0 |
 | **Secrets** | GitLeaks | v2 |
 | **SBOM** | Trivy (SPDX-JSON) | v0.56.1 |
@@ -108,6 +108,8 @@ pruebaDevsecopsCBCO/
 ## Pipeline DevSecOps
 
 ### CI — `triggerci.yml`
+
+> Se dispara en: `push` a main, `pull_request` a main, `pull_request_review` aprobado.
 
 | Job | Fase | Herramientas | Bloquea |
 |-----|------|-------------|---------|
@@ -156,11 +158,15 @@ pruebaDevsecopsCBCO/
 - 3 probes: startup, readiness, liveness en /health
 - ServiceAccount sin auto-mount token
 
+### Aplicación (Express)
+- `x-powered-by` deshabilitado — previene fingerprinting del servidor
+
 ### Pipeline
 - Permisos mínimos por job (principle of least privilege)
 - Image tags inmutables (SHA del commit, nunca :latest)
-- SBOM para compliance y auditoría
+- SBOM + provenance de imagen (supply chain security)
 - GitLeaks bloquea siempre (no exceptions en pipeline)
+- CI obligatorio en PRs (pull_request trigger)
 - Code review obligatorio (validate-pr-approval)
 
 ---
