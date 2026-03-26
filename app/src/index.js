@@ -15,6 +15,11 @@ const logger  = require("./logger");
 const app  = express();
 const port = process.env.PORT || 3000;
 
+// ── Security hardening ─────────────────────────────────────────
+// Deshabilitar el header X-Powered-By para no revelar que usamos Express.
+// Esto dificulta fingerprinting y reduce la superficie de ataque.
+app.disable("x-powered-by");
+
 // ── Middleware: logging de requests HTTP ──────────────────────
 // Registra cada request en formato JSON estructurado.
 // Compatible con Fluent Bit (parser: json), Loki y CloudWatch.
