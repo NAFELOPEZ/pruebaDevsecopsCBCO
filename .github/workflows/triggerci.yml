@@ -54,7 +54,7 @@ env:
   NODE_VERSION: "20"
   # Versión de Trivy — actualizar cuando se publique nueva versión
   # Verificar: https://github.com/aquasecurity/trivy/releases
-  TRIVY_VERSION: "v0.56.1"
+  TRIVY_VERSION: "v0.69.3"
   # Versión de ArgoCD CLI — debe coincidir con la versión del servidor
   ARGOCD_CLI_VERSION: "v2.13.3"
 
