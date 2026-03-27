@@ -167,7 +167,7 @@ pruebaDevsecopsCBCO/
 - SBOM + provenance de imagen (supply chain security)
 - GitLeaks bloquea siempre (no exceptions en pipeline)
 - CI obligatorio en PRs (pull_request trigger)
-- Code review obligatorio (branch protection rules)
+- Code review obligatorio (branch protection ruleset: PR requerido con 1 aprobación + status check CI obligatorio)
 
 ---
 

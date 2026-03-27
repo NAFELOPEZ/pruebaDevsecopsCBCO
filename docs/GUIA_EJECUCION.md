@@ -204,7 +204,29 @@ env:
 2. **Settings → General → Pull Requests**:
    - ✅ Allow auto-merge
 
-### P4 — Configurar GitHub Secrets
+### P4 — Configurar Branch Protection Rules
+
+> Protege la rama `main` para que todo cambio pase por PR con aprobación y CI exitoso.
+
+1. **Settings → Rules → Rulesets → New ruleset → New branch ruleset**
+2. **Ruleset Name**: `main`
+3. **Enforcement status**: **Active**
+4. **Target branches** → Add target → Include by pattern → `main`
+5. Activar las siguientes reglas:
+
+| Regla | Configuración |
+|-------|--------------|
+| **Require a pull request before merging** | Required approvals: `1` |
+| **Require status checks to pass** | Add check: `CI — Tests + Security Scanning` + "Require branches to be up to date" |
+| **Block force pushes** | ✅ Activado |
+
+6. Clic en **"Create"** o **"Save changes"**
+
+> **Nota**: La opción "Do not allow bypassing the above settings" solo está disponible en planes GitHub Pro/Team/Enterprise. En plan Free no aparece — no es crítico para el funcionamiento del pipeline.
+
+> **Importante**: El check `CI — Tests + Security Scanning` solo aparece en el buscador después de que el pipeline se haya ejecutado al menos una vez exitosamente. Si no lo encuentras, busca por `ci` (el nombre del job en el workflow).
+
+### P5 — Configurar GitHub Secrets
 
 **Settings → Secrets and variables → Actions → New repository secret:**
 
@@ -218,7 +240,7 @@ env:
 
 > Los secrets marcados ⚡ son opcionales. Sin ellos, el CD funciona en **modo degradado** (pasa con warnings).
 
-### P5 — Ejecutar el pipeline
+### P6 — Ejecutar el pipeline
 
 ```bash
 git add .
@@ -226,7 +248,7 @@ git commit -m "ci: trigger pipeline"
 git push origin main
 ```
 
-### P6 — Monitorear ejecución
+### P7 — Monitorear ejecución
 
 **En GitHub**: Actions → workflow run más reciente
 
@@ -242,7 +264,7 @@ gh run watch
 gh run watch
 ```
 
-### P7 — Verificar resultados
+### P8 — Verificar resultados
 
 Después de un pipeline exitoso:
 
@@ -252,7 +274,7 @@ Después de un pipeline exitoso:
 4. **Docker Hub**: Imagen publicada con tag = SHA del commit
 5. **Deployments**: Estado del deployment en la pestaña Environments
 
-### P8 — Gestión del PR de GitOps
+### P9 — Gestión del PR de GitOps
 
 El CI crea un PR automático que actualiza el image tag en `gitops/values.yaml`. Este PR:
 - Tiene auto-merge habilitado (si configuraste P3)
