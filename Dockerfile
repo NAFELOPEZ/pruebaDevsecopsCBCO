@@ -28,6 +28,14 @@ RUN npm ci --omit=dev --ignore-scripts
 # ── Etapa 2: imagen de runtime ────────────────────────────────
 FROM node:20-alpine AS runtime
 
+# Actualizar paquetes del sistema — corrige CVEs en zlib, libcrypto, etc.
+# Luego eliminar npm/npx del runtime: la app sólo necesita node,
+# y npm arrastra dependencias vulnerables (tar, minimatch, glob, cross-spawn)
+# que no se usan en producción.
+RUN apk update && apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack && \
+    rm -rf /root/.npm /tmp/* /var/cache/apk/*
+
 # Crear grupo y usuario no-root explícito
 # UID/GID 1001 debe coincidir con runAsUser en Helm/K8s
 RUN addgroup -g 1001 -S appgroup && \

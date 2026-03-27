@@ -797,6 +797,33 @@ uses: gitleaks/gitleaks-action@v2
 # Auto-detecta .gitleaks.toml del root
 ```
 
+#### Trivy code scanning: 12 alertas HIGH en imagen Docker (tar, minimatch, glob, cross-spawn, zlib)
+**Síntoma**: GitHub Security → Code scanning muestra 12 alertas HIGH de Trivy, todas en paquetes como `tar`, `node-tar`, `minimatch`, `glob`, `cross-spawn` dentro de `/usr/local/lib/node_modules/npm/`, más `zlib` en la imagen base alpine.
+**Causa**: La imagen `node:20-alpine` incluye npm y sus ~300 dependencias transitivas. La app en producción solo necesita `node`, no `npm`.
+**Fix**: Eliminar npm del runtime stage del Dockerfile y actualizar paquetes del sistema:
+```dockerfile
+# En la etapa runtime, ANTES de crear el usuario
+RUN apk update && apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack && \
+    rm -rf /root/.npm /tmp/* /var/cache/apk/*
+```
+Esto elimina las 11 vulnerabilidades de npm + corrige zlib via `apk upgrade`.
+
+#### cd-verify.yml: warnings "Context access might be invalid: DEPLOY_APP_URL"
+**Síntoma**: VS Code muestra 3 warnings en `cd-verify.yml` sobre acceso a `secrets.DEPLOY_APP_URL`.
+**Causa**: La extensión de GitHub Actions no puede verificar que el secret exista (es un secret opcional). Además, interpolar secrets directamente en scripts shell (`${{ secrets.X }}`) es un riesgo de inyección.
+**Fix**: Mover el secret a una variable de entorno a nivel de job y referenciarla como `${DEPLOY_URL}` en los scripts:
+```yaml
+jobs:
+  deploy-verify:
+    env:
+      DEPLOY_URL: ${{ secrets.DEPLOY_APP_URL }}  # única referencia al secret
+    steps:
+      - run: |
+          if [ -z "${DEPLOY_URL}" ]; then  # usar env var, no secret directo
+```
+Reduce las advertencias de 3 a 1 (la referencia en `env:` del job es inevitable).
+
 #### GitOps PR no se crea
 **Causa**: Permisos insuficientes en GitHub Actions.
 **Fix**: Settings → Actions → General → Workflow permissions → **Read and write permissions** + ✅ Allow GitHub Actions to create pull requests.
