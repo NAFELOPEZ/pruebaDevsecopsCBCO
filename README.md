@@ -144,6 +144,8 @@ pruebaDevsecopsCBCO/
 ### Dockerfile
 - Multi-stage build (solo prod dependencies en imagen final ~50MB)
 - `npm ci --ignore-scripts` — previene post-install injection
+- npm/npx/corepack eliminados del runtime — reduce superficie de ataque y CVEs
+- `apk upgrade` en runtime — corrige CVEs de paquetes del sistema (zlib, etc.)
 - Non-root user (UID/GID 1001)
 - HEALTHCHECK nativo sin curl
 

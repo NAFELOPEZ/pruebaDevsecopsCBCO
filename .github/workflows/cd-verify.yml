@@ -54,6 +54,10 @@ jobs:
       contents: read
       deployments: write    # Para actualizar GitHub Deployment status
 
+    # DEPLOY_APP_URL es opcional — si no está configurado, smoke tests se saltan
+    env:
+      DEPLOY_URL: ${{ secrets.DEPLOY_APP_URL }}
+
     outputs:
       image_tag: ${{ steps.get-tag.outputs.image_tag }}
       deployment_id: ${{ steps.find-deployment.outputs.deployment_id }}
@@ -162,7 +166,7 @@ jobs:
       - name: Check smoke test configuration
         id: smoke-check
         run: |
-          if [ -z "${{ secrets.DEPLOY_APP_URL }}" ]; then
+          if [ -z "${DEPLOY_URL}" ]; then
             echo "⚠️ DEPLOY_APP_URL no configurado — smoke tests saltados"
             echo "   Agregar el secret para habilitar smoke tests post-deploy"
             echo "smoke_available=false" >> "$GITHUB_OUTPUT"
@@ -174,7 +178,7 @@ jobs:
       - name: Smoke tests — verify deployment
         if: steps.smoke-check.outputs.smoke_available == 'true'
         env:
-          APP_URL: ${{ secrets.DEPLOY_APP_URL }}
+          APP_URL: ${{ env.DEPLOY_URL }}
         run: |
           echo "🔍 Ejecutando smoke tests contra: ${APP_URL}"
           echo ""
@@ -239,13 +243,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          EXTRA_ARGS=""
+          if [ -n "${DEPLOY_URL}" ]; then
+            EXTRA_ARGS="-f environment_url=${DEPLOY_URL}"
+          fi
           gh api \
             repos/${{ github.repository }}/deployments/${{ steps.find-deployment.outputs.deployment_id }}/statuses \
             --method POST \
             -H "Accept: application/vnd.github+json" \
             -f state="success" \
             -f description="Deploy ${{ steps.get-tag.outputs.image_tag }} verificado" \
-            -f environment_url="${{ secrets.DEPLOY_APP_URL }}"
+            ${EXTRA_ARGS}
 
       # ── Actualizar GitHub Deployment Status → failure ─────
       - name: Update GitHub Deployment Status → failure
