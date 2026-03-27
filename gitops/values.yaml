@@ -12,7 +12,7 @@
 
 image:
   repository: "docker.io/nahumtestaccount/demo-app"
-  tag: "9c5b1622e94f"
+  tag: "8eb6da87434e"
   pullPolicy: Always           # Always garantiza imagen correcta con tags mutables
 
 replicaCount: 1
